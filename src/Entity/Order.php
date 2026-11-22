@@ -1,9 +1,10 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Entity;
 
-
+use App\Contract\Entity\EntityInterface;
 use App\Repository\OrderRepository;
 use DateTimeImmutable;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -18,7 +19,7 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Index(name: 'idx_create_date_status', columns: ['create_date', 'status'])]
 #[ORM\Index(name: 'idx_hash', columns: ['hash'])]
 #[ORM\Entity(repositoryClass: OrderRepository::class)]
-class Order
+class Order implements EntityInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -404,96 +405,96 @@ class Order
         return $this;
     }
 
-    public function getDeliveryTimeMin(): ?\DateTimeImmutable
+    public function getDeliveryTimeMin(): ?DateTimeImmutable
     {
         return $this->deliveryTimeMin;
     }
 
-    public function setDeliveryTimeMin(?\DateTimeImmutable $deliveryTimeMin): static
+    public function setDeliveryTimeMin(?DateTimeImmutable $deliveryTimeMin): static
     {
         $this->deliveryTimeMin = $deliveryTimeMin;
 
         return $this;
     }
 
-    public function getDeliveryTimeMax(): ?\DateTimeImmutable
+    public function getDeliveryTimeMax(): ?DateTimeImmutable
     {
         return $this->deliveryTimeMax;
     }
 
-    public function setDeliveryTimeMax(?\DateTimeImmutable $deliveryTimeMax): static
+    public function setDeliveryTimeMax(?DateTimeImmutable $deliveryTimeMax): static
     {
         $this->deliveryTimeMax = $deliveryTimeMax;
 
         return $this;
     }
 
-    public function getDeliveryTimeConfirmMin(): ?\DateTimeImmutable
+    public function getDeliveryTimeConfirmMin(): ?DateTimeImmutable
     {
         return $this->deliveryTimeConfirmMin;
     }
 
-    public function setDeliveryTimeConfirmMin(?\DateTimeImmutable $deliveryTimeConfirmMin): static
+    public function setDeliveryTimeConfirmMin(?DateTimeImmutable $deliveryTimeConfirmMin): static
     {
         $this->deliveryTimeConfirmMin = $deliveryTimeConfirmMin;
 
         return $this;
     }
 
-    public function getDeliveryTimeConfirmMax(): ?\DateTimeImmutable
+    public function getDeliveryTimeConfirmMax(): ?DateTimeImmutable
     {
         return $this->deliveryTimeConfirmMax;
     }
 
-    public function setDeliveryTimeConfirmMax(?\DateTimeImmutable $deliveryTimeConfirmMax): static
+    public function setDeliveryTimeConfirmMax(?DateTimeImmutable $deliveryTimeConfirmMax): static
     {
         $this->deliveryTimeConfirmMax = $deliveryTimeConfirmMax;
 
         return $this;
     }
 
-    public function getDeliveryTimeFastPayMin(): ?\DateTimeImmutable
+    public function getDeliveryTimeFastPayMin(): ?DateTimeImmutable
     {
         return $this->deliveryTimeFastPayMin;
     }
 
-    public function setDeliveryTimeFastPayMin(?\DateTimeImmutable $deliveryTimeFastPayMin): static
+    public function setDeliveryTimeFastPayMin(?DateTimeImmutable $deliveryTimeFastPayMin): static
     {
         $this->deliveryTimeFastPayMin = $deliveryTimeFastPayMin;
 
         return $this;
     }
 
-    public function getDeliveryTimeFastPayMax(): ?\DateTimeImmutable
+    public function getDeliveryTimeFastPayMax(): ?DateTimeImmutable
     {
         return $this->deliveryTimeFastPayMax;
     }
 
-    public function setDeliveryTimeFastPayMax(?\DateTimeImmutable $deliveryTimeFastPayMax): static
+    public function setDeliveryTimeFastPayMax(?DateTimeImmutable $deliveryTimeFastPayMax): static
     {
         $this->deliveryTimeFastPayMax = $deliveryTimeFastPayMax;
 
         return $this;
     }
 
-    public function getDeliveryOldTimeMin(): ?\DateTimeImmutable
+    public function getDeliveryOldTimeMin(): ?DateTimeImmutable
     {
         return $this->deliveryOldTimeMin;
     }
 
-    public function setDeliveryOldTimeMin(?\DateTimeImmutable $deliveryOldTimeMin): static
+    public function setDeliveryOldTimeMin(?DateTimeImmutable $deliveryOldTimeMin): static
     {
         $this->deliveryOldTimeMin = $deliveryOldTimeMin;
 
         return $this;
     }
 
-    public function getDeliveryOldTimeMax(): ?\DateTimeImmutable
+    public function getDeliveryOldTimeMax(): ?DateTimeImmutable
     {
         return $this->deliveryOldTimeMax;
     }
 
-    public function setDeliveryOldTimeMax(?\DateTimeImmutable $deliveryOldTimeMax): static
+    public function setDeliveryOldTimeMax(?DateTimeImmutable $deliveryOldTimeMax): static
     {
         $this->deliveryOldTimeMax = $deliveryOldTimeMax;
 
@@ -656,24 +657,24 @@ class Order
         return $this;
     }
 
-    public function getPayDateExecution(): ?\DateTimeImmutable
+    public function getPayDateExecution(): ?DateTimeImmutable
     {
         return $this->payDateExecution;
     }
 
-    public function setPayDateExecution(?\DateTimeImmutable $payDateExecution): static
+    public function setPayDateExecution(?DateTimeImmutable $payDateExecution): static
     {
         $this->payDateExecution = $payDateExecution;
 
         return $this;
     }
 
-    public function getOffsetDate(): ?\DateTimeImmutable
+    public function getOffsetDate(): ?DateTimeImmutable
     {
         return $this->offsetDate;
     }
 
-    public function setOffsetDate(?\DateTimeImmutable $offsetDate): static
+    public function setOffsetDate(?DateTimeImmutable $offsetDate): static
     {
         $this->offsetDate = $offsetDate;
 
@@ -692,24 +693,24 @@ class Order
         return $this;
     }
 
-    public function getProposedDate(): ?\DateTimeImmutable
+    public function getProposedDate(): ?DateTimeImmutable
     {
         return $this->proposedDate;
     }
 
-    public function setProposedDate(?\DateTimeImmutable $proposedDate): static
+    public function setProposedDate(?DateTimeImmutable $proposedDate): static
     {
         $this->proposedDate = $proposedDate;
 
         return $this;
     }
 
-    public function getShipDate(): ?\DateTimeImmutable
+    public function getShipDate(): ?DateTimeImmutable
     {
         return $this->shipDate;
     }
 
-    public function setShipDate(?\DateTimeImmutable $shipDate): static
+    public function setShipDate(?DateTimeImmutable $shipDate): static
     {
         $this->shipDate = $shipDate;
 
@@ -860,24 +861,24 @@ class Order
         return $this;
     }
 
-    public function getCreateDate(): ?\DateTimeImmutable
+    public function getCreateDate(): ?DateTimeImmutable
     {
         return $this->createDate;
     }
 
-    public function setCreateDate(\DateTimeImmutable $createDate): static
+    public function setCreateDate(DateTimeImmutable $createDate): static
     {
         $this->createDate = $createDate;
 
         return $this;
     }
 
-    public function getUpdateDate(): ?\DateTimeImmutable
+    public function getUpdateDate(): ?DateTimeImmutable
     {
         return $this->updateDate;
     }
 
-    public function setUpdateDate(?\DateTimeImmutable $updateDate): static
+    public function setUpdateDate(?DateTimeImmutable $updateDate): static
     {
         $this->updateDate = $updateDate;
 
@@ -944,12 +945,12 @@ class Order
         return $this;
     }
 
-    public function getCancelDate(): ?\DateTimeImmutable
+    public function getCancelDate(): ?DateTimeImmutable
     {
         return $this->cancelDate;
     }
 
-    public function setCancelDate(?\DateTimeImmutable $cancelDate): static
+    public function setCancelDate(?DateTimeImmutable $cancelDate): static
     {
         $this->cancelDate = $cancelDate;
 
@@ -1004,12 +1005,12 @@ class Order
         return $this;
     }
 
-    public function getFactDate(): ?\DateTimeImmutable
+    public function getFactDate(): ?DateTimeImmutable
     {
         return $this->factDate;
     }
 
-    public function setFactDate(?\DateTimeImmutable $factDate): static
+    public function setFactDate(?DateTimeImmutable $factDate): static
     {
         $this->factDate = $factDate;
 
@@ -1088,12 +1089,12 @@ class Order
         return $this;
     }
 
-    public function getSendingDate(): ?\DateTimeImmutable
+    public function getSendingDate(): ?DateTimeImmutable
     {
         return $this->sendingDate;
     }
 
-    public function setSendingDate(?\DateTimeImmutable $sendingDate): static
+    public function setSendingDate(?DateTimeImmutable $sendingDate): static
     {
         $this->sendingDate = $sendingDate;
 
@@ -1112,12 +1113,12 @@ class Order
         return $this;
     }
 
-    public function getFullPaymentDate(): ?\DateTimeImmutable
+    public function getFullPaymentDate(): ?DateTimeImmutable
     {
         return $this->fullPaymentDate;
     }
 
-    public function setFullPaymentDate(?\DateTimeImmutable $fullPaymentDate): static
+    public function setFullPaymentDate(?DateTimeImmutable $fullPaymentDate): static
     {
         $this->fullPaymentDate = $fullPaymentDate;
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
+use App\Contract\Repository\FindByIdInterface;
 use App\Entity\OrderArticle;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -16,10 +17,15 @@ use Doctrine\Persistence\ManagerRegistry;
  * @method OrderArticle[]    findAll()
  * @method OrderArticle[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
  */
-class OrderArticleRepository extends ServiceEntityRepository
+class OrderArticleRepository extends ServiceEntityRepository implements FindByIdInterface
 {
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, OrderArticle::class);
+    }
+
+    public function findOneById(int $id): ?OrderArticle
+    {
+        return $this->find($id);
     }
 }

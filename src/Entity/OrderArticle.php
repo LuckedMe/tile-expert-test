@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Contract\Entity\EntityInterface;
 use App\Repository\OrderArticleRepository;
 use DateTimeImmutable;
 use Doctrine\DBAL\Types\Types;
@@ -13,7 +14,7 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Index(name: 'fk_orders_id', columns: ['orders_id'])]
 #[ORM\Index(name: 'idx_article_id', columns: ['article_id'])]
 #[ORM\Entity(repositoryClass: OrderArticleRepository::class)]
-class OrderArticle
+class OrderArticle implements EntityInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -158,24 +159,24 @@ class OrderArticle
         return $this;
     }
 
-    public function getDeliveryTimeMin(): ?\DateTimeImmutable
+    public function getDeliveryTimeMin(): ?DateTimeImmutable
     {
         return $this->deliveryTimeMin;
     }
 
-    public function setDeliveryTimeMin(?\DateTimeImmutable $deliveryTimeMin): static
+    public function setDeliveryTimeMin(?DateTimeImmutable $deliveryTimeMin): static
     {
         $this->deliveryTimeMin = $deliveryTimeMin;
 
         return $this;
     }
 
-    public function getDeliveryTimeMax(): ?\DateTimeImmutable
+    public function getDeliveryTimeMax(): ?DateTimeImmutable
     {
         return $this->deliveryTimeMax;
     }
 
-    public function setDeliveryTimeMax(?\DateTimeImmutable $deliveryTimeMax): static
+    public function setDeliveryTimeMax(?DateTimeImmutable $deliveryTimeMax): static
     {
         $this->deliveryTimeMax = $deliveryTimeMax;
 
