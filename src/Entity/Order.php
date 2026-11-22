@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Contract\Dictionary\Currency;
+use App\Contract\Dictionary\Measure;
+use App\Contract\Dictionary\OrderStatus;
+use App\Contract\Dictionary\PaymentType;
+use App\Contract\Dictionary\VatType;
 use App\Contract\Entity\EntityInterface;
 use App\Repository\OrderRepository;
 use DateTimeImmutable;
@@ -41,14 +46,14 @@ class Order implements EntityInterface
     #[ORM\Column(name: 'number', type: Types::STRING, length: 10, nullable: true, options: ['comment' => 'Order number'])]
     private ?string $number = null;
 
-    #[ORM\Column(name: 'status', type: Types::INTEGER, options: ['default' => 1, 'comment' => 'Order status'])]
-    private int $status;
+    #[ORM\Column(name: 'status', type: Types::ENUM, nullable: false, enumType: OrderStatus::class, options: ['default' => OrderStatus::Created->value, 'comment' => 'Order status'])]
+    private OrderStatus $status = OrderStatus::Created;
 
     #[ORM\Column(name: 'email', type: Types::STRING, length: 100, nullable: true, options: ['comment' => 'Contact email'])]
     private ?string $email = null;
 
-    #[ORM\Column(name: 'vat_type', type: Types::INTEGER, options: ['default' => 0, 'comment' => 'Private person or VAT payer'])]
-    private int $vatType;
+    #[ORM\Column(name: 'vat_type', type: Types::ENUM, nullable: false, enumType: VatType::class, options: ['default' => VatType::VatType1->value, 'comment' => 'Private person or VAT payer'])]
+    private VatType $vatType = VatType::VatType1;
 
     #[ORM\Column(name: 'vat_number', type: Types::STRING, length: 100, nullable: true, options: ['comment' => 'VAT number'])]
     private ?string $vatNumber = null;
@@ -125,8 +130,8 @@ class Order implements EntityInterface
     #[ORM\Column(name: 'company_name', type: Types::STRING, length: 255, nullable: true, options: ['comment' => 'Company name'])]
     private ?string $companyName = null;
 
-    #[ORM\Column(name: 'pay_type', type: Types::SMALLINT, options: ['comment' => 'Selected payment type'])]
-    private int $payType;
+    #[ORM\Column(name: 'pay_type', type: Types::ENUM, nullable: false, enumType: PaymentType::class, options: ['default' => PaymentType::Visa->value, 'comment' => 'Selected payment type'])]
+    private PaymentType $payType = PaymentType::Visa;
 
     #[ORM\Column(name: 'pay_date_execution', type: Types::DATETIME_IMMUTABLE, nullable: true, options: ['comment' => 'Date until which the current order price is valid'])]
     private ?DateTimeImmutable $payDateExecution = null;
@@ -167,11 +172,11 @@ class Order implements EntityInterface
     #[ORM\Column(name: 'cur_rate', type: Types::FLOAT, nullable: true, options: ['default' => 1, 'comment' => 'Exchange rate at the time of payment'])]
     private ?float $curRate = null;
 
-    #[ORM\Column(name: 'currency', type: Types::STRING, length: 3, options: ['default' => 'EUR', 'comment' => 'Currency the order was placed in'])]
-    private string $currency;
+    #[ORM\Column(name: 'currency', type: Types::ENUM, nullable: false, enumType: Currency::class, options: ['default' => Currency::EUR->value, 'comment' => 'Currency the order was placed in'])]
+    private Currency $currency = Currency::EUR;
 
-    #[ORM\Column(name: 'measure', type: Types::STRING, length: 3, options: ['default' => 'm', 'comment' => 'Unit of measure the order was placed in'])]
-    private string $measure;
+    #[ORM\Column(name: 'measure', type: Types::ENUM, nullable: false, enumType: Measure::class, options: ['default' => Measure::M->value, 'comment' => 'Unit of measure the order was placed in'])]
+    private Measure $measure = Measure::M;
 
     #[ORM\Column(name: 'name', type: Types::STRING, length: 200, options: ['comment' => 'Order name'])]
     private string $name;
@@ -188,8 +193,8 @@ class Order implements EntityInterface
     #[ORM\Column(name: 'warehouse_data', type: Types::TEXT, nullable: true, options: ['comment' => 'Warehouse data: address, name, working hours'])]
     private ?string $warehouseData = null;
 
-    #[ORM\Column(name: 'step', type: Types::SMALLINT, options: ['default' => 1, 'comment' => 'If true, the order will not be reset as a result of changes'])]
-    private int $step;
+    #[ORM\Column(name: 'step', type: Types::BOOLEAN, nullable: false, options: ['default' => true, 'comment' => 'If true, the order will not be reset as a result of changes'])]
+    private bool $step = true;
 
     #[ORM\Column(name: 'address_equal', type: Types::BOOLEAN, nullable: true, options: ['default' => 1, 'comment' => 'Payer and recipient addresses match (false - different, true - the same)'])]
     private ?bool $addressEqual = null;
@@ -261,6 +266,18 @@ class Order implements EntityInterface
         return $this->id;
     }
 
+    #[ORM\PrePersist]
+    public function prePersist(): void
+    {
+        $this->setCreateDate(new DateTimeImmutable());
+    }
+
+    #[ORM\PreUpdate]
+    public function preUpdate(): void
+    {
+        $this->setUpdateDate(new DateTimeImmutable());
+    }
+
     public function getHash(): ?string
     {
         return $this->hash;
@@ -309,12 +326,12 @@ class Order implements EntityInterface
         return $this;
     }
 
-    public function getStatus(): ?int
+    public function getStatus(): ?OrderStatus
     {
         return $this->status;
     }
 
-    public function setStatus(int $status): static
+    public function setStatus(?OrderStatus $status): static
     {
         $this->status = $status;
 
@@ -333,12 +350,12 @@ class Order implements EntityInterface
         return $this;
     }
 
-    public function getVatType(): ?int
+    public function getVatType(): ?VatType
     {
         return $this->vatType;
     }
 
-    public function setVatType(int $vatType): static
+    public function setVatType(VatType $vatType): static
     {
         $this->vatType = $vatType;
 
@@ -645,12 +662,12 @@ class Order implements EntityInterface
         return $this;
     }
 
-    public function getPayType(): ?int
+    public function getPayType(): ?PaymentType
     {
         return $this->payType;
     }
 
-    public function setPayType(int $payType): static
+    public function setPayType(PaymentType $payType): static
     {
         $this->payType = $payType;
 
@@ -813,24 +830,24 @@ class Order implements EntityInterface
         return $this;
     }
 
-    public function getCurrency(): ?string
+    public function getCurrency(): ?Currency
     {
         return $this->currency;
     }
 
-    public function setCurrency(string $currency): static
+    public function setCurrency(Currency $currency): static
     {
         $this->currency = $currency;
 
         return $this;
     }
 
-    public function getMeasure(): ?string
+    public function getMeasure(): ?Measure
     {
         return $this->measure;
     }
 
-    public function setMeasure(string $measure): static
+    public function setMeasure(Measure $measure): static
     {
         $this->measure = $measure;
 
@@ -897,12 +914,12 @@ class Order implements EntityInterface
         return $this;
     }
 
-    public function getStep(): ?int
+    public function isStep(): ?bool
     {
         return $this->step;
     }
 
-    public function setStep(int $step): static
+    public function setStep(bool $step): static
     {
         $this->step = $step;
 

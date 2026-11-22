@@ -6,10 +6,13 @@ namespace App\Controller\Api\Order;
 
 use App\Contract\Dictionary\ApiDocTag;
 use App\ControllerRequest\Api\Order\CreateOrderRequest;
+use App\Message\Command\Order\CreateOrderCommand;
+use App\Service\MessageBusHandler;
 use Nelmio\ApiDocBundle\Attribute\Model;
 use OpenApi\Attributes as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
@@ -30,15 +33,11 @@ class CreateOrderController extends AbstractController
     #[OA\Response(response: Response::HTTP_NO_CONTENT, description: 'No content on success')]
     #[OA\Tag(name: ApiDocTag::ORDERS)]
     public function __invoke(
-        CreateOrderRequest $request,
-        // MessageBusHandler $messageBusHandler,
+        Request $httpRequest,
+        CreateOrderRequest $createRequest,
+        MessageBusHandler $messageBusHandler,
     ): JsonResponse {
-        //        $dto = $messageBusHandler->handleCommand(
-        //            new CreateOrderCommand(
-        // //                fields: $request->fields,
-        // //                context: $request->context,
-        //            )
-        //        );
+        $messageBusHandler->handleCommand(new CreateOrderCommand(data: $createRequest));
 
         return $this->json(null, Response::HTTP_NO_CONTENT);
     }

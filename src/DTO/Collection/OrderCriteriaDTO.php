@@ -4,12 +4,7 @@ declare(strict_types=1);
 
 namespace App\DTO\Collection;
 
-use App\Contract\Dictionary\PageSitemapChangeFrequency;
-use App\Contract\Dictionary\PageSitemapPriority;
-use App\Contract\Dictionary\PageType;
 use App\DTOFactory\Collection\OrderCriteriaDTOFactory;
-use App\ValueObject\LocaleVO;
-use Carbon\CarbonImmutable;
 
 /**
  * @see OrderCriteriaDTOFactory

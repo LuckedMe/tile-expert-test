@@ -1,0 +1,18 @@
+POST https://tile-expert-test.local/api/orders
+Accept: application/json
+Content-Type: application/json
+
+{
+    "hash": "12345678901234567890123456789000",
+    "token": "1234567890123456789012345678901212345678901234567890123456789000",
+    "email": "test@example.com",
+    "vat_type": "vat-type-1",
+    "vat_number": "0123456789",
+    "tax_number": "9876543210",
+    "payment_type": "visa",
+    "locale": "en_GB",
+    "currency": "EUR",
+    "measure": "m",
+    "name": "name"
+
+}

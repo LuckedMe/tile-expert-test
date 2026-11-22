@@ -10,8 +10,6 @@ enum OrderStatus: string
 {
     use EnumValuesTrait;
 
-    case Page        = 'page';
-    case Article     = 'article';
     case Created     = 'created';
     case Canceled    = 'canceled';
     case Confirmed   = 'confirmed';
