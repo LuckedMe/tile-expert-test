@@ -1,0 +1,6 @@
+@orderId=2
+GET https://tile-expert-test.local/api/orders/{{orderId}}
+Accept: application/json
+
+{
+}

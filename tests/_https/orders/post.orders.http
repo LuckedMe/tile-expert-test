@@ -1,9 +1,8 @@
 POST https://tile-expert-test.local/api/orders
 Accept: application/json
-Content-Type: application/json
 
 {
-    "hash": "12345678901234567890123456789000",
+    "hash": "12345678901234567890123456780000",
     "token": "1234567890123456789012345678901212345678901234567890123456789000",
     "email": "test@example.com",
     "vat_type": "vat-type-1",
@@ -14,5 +13,4 @@ Content-Type: application/json
     "currency": "EUR",
     "measure": "m",
     "name": "name"
-
 }

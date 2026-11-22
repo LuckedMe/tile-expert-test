@@ -6,6 +6,8 @@ namespace App\Controller\Api\Order;
 
 use App\Contract\Dictionary\ApiDocTag;
 use App\DTO\Entity\OrderDetailsDTO;
+use App\Message\Query\Order\GetOrderDetailsQuery;
+use App\Service\MessageBusHandler;
 use Nelmio\ApiDocBundle\Attribute\Model;
 use OpenApi\Attributes as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -41,10 +43,10 @@ class GetOrderDetailsController extends AbstractController
     #[OA\Tag(name: ApiDocTag::ORDERS)]
     public function __invoke(
         int $id,
-        //        MessageBusHandler $messageBusHandler,
+        MessageBusHandler $messageBusHandler,
     ): JsonResponse {
         /** @var OrderDetailsDTO $dto */
-        // $dto = $messageBusHandler->handleQuery(new GetOrderDetailsQuery(id: $id));
+        $dto = $messageBusHandler->handleQuery(new GetOrderDetailsQuery(id: $id));
 
         return $this->json(
             data: $dto,

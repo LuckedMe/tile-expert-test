@@ -4,4 +4,5 @@ GENERAL:
     NOT_FOUND: 'Not Found'
 
 ORDER:
+    NOT_FOUND: 'Order Not Found'
     NO_FACTORY: 'No handler found for the given order source'
