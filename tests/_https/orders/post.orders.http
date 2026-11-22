@@ -1,4 +1,5 @@
 POST https://tile-expert-test.local/api/orders
+Content-Type: application/json
 Accept: application/json
 
 {
@@ -12,5 +13,23 @@ Accept: application/json
     "locale": "en_GB",
     "currency": "EUR",
     "measure": "m",
-    "name": "name"
+    "name": "name",
+    "articles": [
+        {
+            "article_id": 5,
+            "amount": 12.5,
+            "price": 30.2,
+            "price_eur": 30.2,
+            "currency": "EUR",
+            "measure": "m",
+            "delivery_time_min": "2026-12-01",
+            "delivery_time_max": "2026-12-15",
+            "weight": 20,
+            "multiple_pallet": 1,
+            "packaging_count": 1,
+            "pallet": 50,
+            "packaging": 1.44,
+            "swimming_pool": false
+        }
+    ]
 }

@@ -7,8 +7,13 @@ namespace App\DTO\Collection\Meta;
 use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Serializer\Attribute\SerializedName;
 
+use function max;
+
 final readonly class CollectionPaginatorDTO
 {
+    #[Groups(['collection_meta'])]
+    public int $pages;
+
     public function __construct(
         #[Groups(['collection_meta'])]
         public int $page,
@@ -20,5 +25,6 @@ final readonly class CollectionPaginatorDTO
         #[Groups(['collection_meta'])]
         public int $total,
     ) {
+        $this->pages = $perPage > 0 ? max(1, (int) ceil($total / $perPage)) : 1;
     }
 }

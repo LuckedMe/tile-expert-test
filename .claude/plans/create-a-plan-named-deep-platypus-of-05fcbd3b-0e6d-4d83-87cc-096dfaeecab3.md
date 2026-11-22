@@ -19,16 +19,16 @@ Sections (every item is a checkbox so progress can be ticked):
 3. **Endpoints**
    - [ ] `GET /api/products` – fetch price (EUR) from `https://tile.expert/it/tile/{factory}/{collection}/a/{article}` using Symfony HttpClient; parse price; JSON `{price,factory,collection,article}`; 404 when page/price missing; cache via Symfony Cache.
    - [ ] `GET /api/orders` – paginated collection, grouped by day/month/year (`group_by` param); response: page, per_page, total, pages + `data:[{group,count}]`. Reuse `GetOrderCollectionController`, `OrderCriteriaDTO(Factory)`, `OrderRepository` + `PaginatorRepositoryTrait`.
-   - [ ] `POST /api/orders` – finish `CreateOrderHandler` + `OrderEntityFactoryInterface` factories (fix tag via `_instanceof` – done; remove duplicate `OrderCreateRequestEntityFactory`; make `OrderHttpRequestEntityFactory` return a real order; `UnprocessableEntityException` if no factory).
+   - [ ] `POST /api/orders` – finish `CreateOrderHandler` + `OrderEntityFactoryInterface` factories (fix tag via `_instanceof` – done; remove duplicate `OrderCreateRequestEntityFactory`; make `OrderHttpRequestEntityFactory` return a real order; `UnprocessableEntityException` if no factory); body has an `articles` array (`CreateOrderArticleRequest`, 1..200 items) and the `OrderArticle` rows are saved with the order in one transaction (cascade persist).
    - [ ] `GET /api/orders/{id}` – details with articles (`GetOrderDetailsController`), 404 via `EntityNotFoundException`.
 4. **Additional**
    - [ ] Manticore: add `manticoresearch/manticore` service to `docker-compose.yaml`; index `orders` (table via migration/SQL script + indexer command); `composer require manticoresoftware/manticoresearch-php`; `OrderSearchService`; in `GET /api/orders` the `query` param runs a Manticore `*` wildcard search (`query=*` / `foo*`) returning ids, then MySQL filters/groups by those ids; fallback when Manticore is down.
    - [ ] Swagger/OpenAPI docs for all four endpoints (Nelmio already in use; `#[OA\...]` attributes).
    - [ ] Ports in env vars (`.env`, `docker-compose.yaml`), `makefile` targets.
    - [ ] **README.md** (currently just `# tile-expert-test`): add/update main `README.md` about the project — purpose, stack (PHP 8.4, Symfony 8.1, Doctrine, Messenger, MySQL, Manticore, Nginx, Docker), quick start (`make docker-up`, migrations, env/ports), project structure (Controller → MessageBus → Handler → EntityFactory/Repository), running tests, link to `docs/`.
-   - [ ] **README.md – API endpoints**: describe every endpoint (method, path, params, request body example, success/error responses with status codes, curl example): `GET /api/products`, `GET /api/orders`, `POST /api/orders`, `GET /api/orders/{id}`; mention Swagger UI URL (Nelmio) and `tests/_https/*.http` examples. Written after the endpoints are final so docs match behaviour.
+   - [ ] **README.md – API endpoints**: describe every endpoint (method, path, params, request body example incl. the `articles` array, success/error responses with status codes, curl example): `GET /api/products`, `GET /api/orders`, `POST /api/orders`, `GET /api/orders/{id}`; mention Swagger UI URL (Nelmio) and `tests/_https/*.http` examples. Written after the endpoints are final so docs match behaviour.
 5. **Tests** (`symfony/test-pack`, `php bin/phpunit`, test DB + fixtures)
-   - [ ] `WebTestCase`: POST /api/orders (201/204, 422 validation, 400 bad JSON)
+   - [ ] `WebTestCase`: POST /api/orders (201/204, 422 validation, 400 bad JSON, articles saved / validated per item / all-or-nothing)
    - [ ] `WebTestCase`: GET /api/orders (pagination, grouping, search), GET /api/orders/{id} (200/404)
    - [ ] `WebTestCase`: GET /api/products with mocked HttpClient (`MockHttpClient`)
    - [ ] `KernelTestCase`: `CreateOrderHandler` – picks factory by source, throws `UnprocessableEntityException` when none supports

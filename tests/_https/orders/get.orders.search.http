@@ -1,0 +1,29 @@
+@host=https://tile-expert-test.local
+
+### Manticore search: "example" matches *example* in the e-mail, name, hash, ...
+GET {{host}}/api/orders?query=example
+Accept: application/json
+
+### Explicit wildcard: words starting with "test"
+GET {{host}}/api/orders?query=test*
+Accept: application/json
+
+### Wildcard at the beginning: e-mails of a domain
+GET {{host}}/api/orders?query=*@example.com
+Accept: application/json
+
+### Several words: all of them must match
+GET {{host}}/api/orders?query=test example
+Accept: application/json
+
+### Search + grouping + date range
+GET {{host}}/api/orders?query=example&group_by=month&start_day=2026-01-01&end_day=2026-12-31
+Accept: application/json
+
+### "*" (or an empty query) does not filter
+GET {{host}}/api/orders?query=*
+Accept: application/json
+
+### Nothing found -> empty items
+GET {{host}}/api/orders?query=nothingmatchesthis
+Accept: application/json

@@ -21,24 +21,24 @@ class OrderArticle implements EntityInterface
     #[ORM\Column(name: 'id', type: Types::INTEGER)]
     private ?int $id = null;
 
-    #[ORM\Column(name: 'orders_id', type: Types::INTEGER, nullable: true)]
+    #[ORM\Column(name: 'orders_id', type: Types::INTEGER, nullable: false)]
     private ?int $ordersId = null;
 
     #[ORM\ManyToOne(targetEntity: Order::class, inversedBy: 'articles')]
-    #[ORM\JoinColumn(name: 'orders_id', referencedColumnName: 'id', nullable: true, onDelete: 'CASCADE')]
+    #[ORM\JoinColumn(name: 'orders_id', referencedColumnName: 'id', nullable: false, onDelete: 'CASCADE')]
     private ?Order $order = null;
 
     #[ORM\Column(name: 'article_id', type: Types::INTEGER, nullable: true, options: ['comment' => 'Collection ID'])]
     private ?int $articleId = null;
 
-    #[ORM\Column(name: 'amount', type: Types::FLOAT, options: ['comment' => 'Number of articles in the unit of measure'])]
-    private float $amount;
+    #[ORM\Column(name: 'amount', type: Types::DECIMAL, precision: 12, scale: 3, options: ['comment' => 'Number of articles in the unit of measure'])]
+    private string $amount;
 
-    #[ORM\Column(name: 'price', type: Types::FLOAT, options: ['comment' => 'Price at the time of order payment'])]
-    private float $price;
+    #[ORM\Column(name: 'price', type: Types::DECIMAL, precision: 12, scale: 2, options: ['comment' => 'Price at the time of order payment'])]
+    private string $price;
 
-    #[ORM\Column(name: 'price_eur', type: Types::FLOAT, nullable: true, options: ['comment' => 'Order price in euros'])]
-    private ?float $priceEur = null;
+    #[ORM\Column(name: 'price_eur', type: Types::DECIMAL, precision: 12, scale: 2, nullable: true, options: ['comment' => 'Order price in euros'])]
+    private ?string $priceEur = null;
 
     #[ORM\Column(name: 'currency', type: Types::STRING, length: 3, nullable: true, options: ['comment' => 'Currency the price is set for'])]
     private ?string $currency = null;
@@ -52,20 +52,20 @@ class OrderArticle implements EntityInterface
     #[ORM\Column(name: 'delivery_time_max', type: Types::DATE_IMMUTABLE, nullable: true, options: ['comment' => 'Maximum delivery time'])]
     private ?DateTimeImmutable $deliveryTimeMax = null;
 
-    #[ORM\Column(name: 'weight', type: Types::FLOAT, options: ['comment' => 'Package weight'])]
-    private float $weight;
+    #[ORM\Column(name: 'weight', type: Types::DECIMAL, precision: 10, scale: 3, options: ['comment' => 'Package weight'])]
+    private string $weight;
 
     #[ORM\Column(name: 'multiple_pallet', type: Types::SMALLINT, nullable: true, options: ['comment' => 'Pallet multiple: 1 - multiple of a package, 2 - multiple of a pallet, 3 - not less than a pallet'])]
     private ?int $multiplePallet = null;
 
-    #[ORM\Column(name: 'packaging_count', type: Types::FLOAT, options: ['comment' => 'Quantity multiple in which the product can be added to the order'])]
-    private float $packagingCount;
+    #[ORM\Column(name: 'packaging_count', type: Types::DECIMAL, precision: 10, scale: 3, options: ['comment' => 'Quantity multiple in which the product can be added to the order'])]
+    private string $packagingCount;
 
-    #[ORM\Column(name: 'pallet', type: Types::FLOAT, options: ['comment' => 'Quantity per pallet at the time of the order'])]
-    private float $pallet;
+    #[ORM\Column(name: 'pallet', type: Types::DECIMAL, precision: 10, scale: 3, options: ['comment' => 'Quantity per pallet at the time of the order'])]
+    private string $pallet;
 
-    #[ORM\Column(name: 'packaging', type: Types::FLOAT, options: ['comment' => 'Quantity per package'])]
-    private float $packaging;
+    #[ORM\Column(name: 'packaging', type: Types::DECIMAL, precision: 10, scale: 3, options: ['comment' => 'Quantity per package'])]
+    private string $packaging;
 
     #[ORM\Column(name: 'swimming_pool', type: Types::BOOLEAN, options: ['default' => 0, 'comment' => 'Tile specifically for swimming pools'])]
     private bool $swimmingPool;
@@ -101,36 +101,36 @@ class OrderArticle implements EntityInterface
 
     public function getAmount(): ?float
     {
-        return $this->amount;
+        return isset($this->amount) ? (float) $this->amount : null;
     }
 
-    public function setAmount(float $amount): static
+    public function setAmount(float|string $amount): static
     {
-        $this->amount = $amount;
+        $this->amount = (string) $amount;
 
         return $this;
     }
 
     public function getPrice(): ?float
     {
-        return $this->price;
+        return isset($this->price) ? (float) $this->price : null;
     }
 
-    public function setPrice(float $price): static
+    public function setPrice(float|string $price): static
     {
-        $this->price = $price;
+        $this->price = (string) $price;
 
         return $this;
     }
 
     public function getPriceEur(): ?float
     {
-        return $this->priceEur;
+        return $this->priceEur === null ? null : (float) $this->priceEur;
     }
 
-    public function setPriceEur(?float $priceEur): static
+    public function setPriceEur(float|string|null $priceEur): static
     {
-        $this->priceEur = $priceEur;
+        $this->priceEur = $priceEur === null ? null : (string) $priceEur;
 
         return $this;
     }
@@ -185,12 +185,12 @@ class OrderArticle implements EntityInterface
 
     public function getWeight(): ?float
     {
-        return $this->weight;
+        return isset($this->weight) ? (float) $this->weight : null;
     }
 
-    public function setWeight(float $weight): static
+    public function setWeight(float|string $weight): static
     {
-        $this->weight = $weight;
+        $this->weight = (string) $weight;
 
         return $this;
     }
@@ -209,36 +209,36 @@ class OrderArticle implements EntityInterface
 
     public function getPackagingCount(): ?float
     {
-        return $this->packagingCount;
+        return isset($this->packagingCount) ? (float) $this->packagingCount : null;
     }
 
-    public function setPackagingCount(float $packagingCount): static
+    public function setPackagingCount(float|string $packagingCount): static
     {
-        $this->packagingCount = $packagingCount;
+        $this->packagingCount = (string) $packagingCount;
 
         return $this;
     }
 
     public function getPallet(): ?float
     {
-        return $this->pallet;
+        return isset($this->pallet) ? (float) $this->pallet : null;
     }
 
-    public function setPallet(float $pallet): static
+    public function setPallet(float|string $pallet): static
     {
-        $this->pallet = $pallet;
+        $this->pallet = (string) $pallet;
 
         return $this;
     }
 
     public function getPackaging(): ?float
     {
-        return $this->packaging;
+        return isset($this->packaging) ? (float) $this->packaging : null;
     }
 
-    public function setPackaging(float $packaging): static
+    public function setPackaging(float|string $packaging): static
     {
-        $this->packaging = $packaging;
+        $this->packaging = (string) $packaging;
 
         return $this;
     }

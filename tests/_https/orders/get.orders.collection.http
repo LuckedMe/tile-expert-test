@@ -1,0 +1,33 @@
+@host=https://tile-expert-test.local
+
+### Number of orders per day (default), first page
+GET {{host}}/api/orders
+Accept: application/json
+
+### Per month, 12 groups per page, biggest groups first
+GET {{host}}/api/orders?group_by=month&per_page=12&page=1&sort=count desc
+Accept: application/json
+
+### Per year, oldest first
+GET {{host}}/api/orders?group_by=year&sort=group asc
+Accept: application/json
+
+### Per day in a date range (both days are inclusive)
+GET {{host}}/api/orders?group_by=day&start_day=2026-11-01&end_day=2026-11-30
+Accept: application/json
+
+### Second page of 5 groups
+GET {{host}}/api/orders?per_page=5&page=2
+Accept: application/json
+
+### Invalid group_by -> 422
+GET {{host}}/api/orders?group_by=week
+Accept: application/json
+
+### Invalid page and per_page -> 422
+GET {{host}}/api/orders?page=0&per_page=1001
+Accept: application/json
+
+### Invalid date -> 422
+GET {{host}}/api/orders?start_day=yesterday
+Accept: application/json

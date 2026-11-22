@@ -6,3 +6,7 @@ GENERAL:
 ORDER:
     NOT_FOUND: 'Order Not Found'
     NO_FACTORY: 'No handler found for the given order source'
+
+PRODUCT:
+    NOT_FOUND: 'Product Not Found'
+    PRICE_NOT_FOUND: 'Product price not found'

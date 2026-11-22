@@ -6,8 +6,10 @@ namespace App\Controller\Api\Order;
 
 use App\Contract\Dictionary\ApiDocTag;
 use App\ControllerRequest\Api\Order\GetOrderCollectionRequest;
-use App\DTO\Collection\OrderInfoCollectionDTO;
+use App\DTO\Collection\OrderGroupCollectionDTO;
 use App\DTOFactory\Collection\OrderCriteriaDTOFactory;
+use App\Message\Query\Order\GetOrderCollectionQuery;
+use App\Service\MessageBusHandler;
 use Nelmio\ApiDocBundle\Attribute\Model;
 use OpenApi\Attributes as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -23,11 +25,12 @@ class GetOrderCollectionController extends AbstractController
         options: ['expose' => true],
         methods: ['GET']
     )]
-    #[OA\Response(ref: '#/components/responses/error', response: Response::HTTP_UNPROCESSABLE_ENTITY)]
-    #[OA\Response(ref: '#/components/responses/invalid_json', response: Response::HTTP_BAD_REQUEST)]
-    #[OA\Response(ref: '#/components/responses/invalid_credentials', response: Response::HTTP_UNAUTHORIZED)]
-    #[OA\Response(ref: '#/components/responses/forbidden', response: Response::HTTP_FORBIDDEN)]
-    #[OA\Response(ref: '#/components/responses/not_found', response: Response::HTTP_NOT_FOUND)]
+    #[OA\Get(
+        description: 'Paginated by groups. `query` is a Manticore wildcard search over hash, email, name, number, '
+            . 'client and company names and description (`foo` matches `*foo*`, `*` matches everything).',
+        summary: 'Get the number of orders grouped by day, month or year',
+    )]
+    #[OA\Response(ref: '#/components/responses/error', response: Response::HTTP_UNPROCESSABLE_ENTITY, description: 'Invalid query parameters')]
     // custom
     #[OA\Parameter(ref: '#/components/parameters/page')]
     #[OA\Parameter(ref: '#/components/parameters/per_page')]
@@ -41,34 +44,40 @@ class GetOrderCollectionController extends AbstractController
         required: false,
         schema: new OA\Schema(
             type: 'string',
-            default: 'created_at asc'
+            default: 'group desc'
         ),
         examples: [
-            new OA\Examples(example: 'created_at asc', summary: 'Sort by created_at asc', value: 'created_at asc'),
-            new OA\Examples(example: 'created_at desc', summary: 'Sort by created_at desc', value: 'created_at desc'),
+            new OA\Examples(example: 'group desc', summary: 'Newest groups first', value: 'group desc'),
+            new OA\Examples(example: 'group asc', summary: 'Oldest groups first', value: 'group asc'),
+            new OA\Examples(example: 'count desc', summary: 'Biggest groups first', value: 'count desc'),
         ]
+    )]
+    #[OA\Parameter(
+        name: 'group_by',
+        in: 'query',
+        required: false,
+        schema: new OA\Schema(type: 'string', default: 'day', enum: ['day', 'month', 'year']),
     )]
     #[OA\Response(
         response: Response::HTTP_OK,
-        description: 'Returns collection',
+        description: 'Page of groups with the number of orders in each',
         content: new OA\JsonContent(
             ref: new Model(
-                type: OrderInfoCollectionDTO::class,
+                type: OrderGroupCollectionDTO::class,
                 groups: ['collection_meta', 'order_collection'],
             )
         ),
     )]
     #[OA\Tag(name: ApiDocTag::ORDERS)]
     public function __invoke(
-        //        MessageBusHandler $messageBusHandler,
+        MessageBusHandler $messageBusHandler,
         OrderCriteriaDTOFactory $factory,
         GetOrderCollectionRequest $request,
     ): JsonResponse {
-        $dto = null;
-        //        $dto = $messageBusHandler->handleQuery(
-        //            new GetOrderCollectionQuery(
-        //                criteria: $factory->fromCollectionRequest($request)
-        //            ));
+        /** @var OrderGroupCollectionDTO $dto */
+        $dto = $messageBusHandler->handleQuery(
+            new GetOrderCollectionQuery(criteria: $factory->fromCollectionRequest($request))
+        );
 
         return $this->json(
             data: $dto,

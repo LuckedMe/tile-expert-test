@@ -20,9 +20,8 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Table(name: 'orders')]
 #[ORM\Index(name: 'idx_delivery_country', columns: ['delivery_country'])]
 #[ORM\Index(name: 'idx_user_id', columns: ['user_id'])]
-#[ORM\Index(name: 'idx_create_date', columns: ['create_date'])]
 #[ORM\Index(name: 'idx_create_date_status', columns: ['create_date', 'status'])]
-#[ORM\Index(name: 'idx_hash', columns: ['hash'])]
+#[ORM\UniqueConstraint(name: 'uniq_orders_hash', columns: ['hash'])]
 #[ORM\Entity(repositoryClass: OrderRepository::class)]
 class Order implements EntityInterface
 {
@@ -31,7 +30,7 @@ class Order implements EntityInterface
     #[ORM\Column(name: 'id', type: Types::INTEGER)]
     private ?int $id = null;
 
-    #[ORM\OneToMany(targetEntity: OrderArticle::class, mappedBy: 'order', orphanRemoval: true)]
+    #[ORM\OneToMany(targetEntity: OrderArticle::class, mappedBy: 'order', cascade: ['persist'], orphanRemoval: true)]
     private Collection $articles;
 
     #[ORM\Column(name: 'hash', type: Types::STRING, length: 32, options: ['comment' => 'Order hash'])]
@@ -61,11 +60,11 @@ class Order implements EntityInterface
     #[ORM\Column(name: 'tax_number', type: Types::STRING, length: 50, nullable: true, options: ['comment' => 'Individual taxpayer identification number'])]
     private ?string $taxNumber = null;
 
-    #[ORM\Column(name: 'discount', type: Types::SMALLINT, nullable: true, options: ['comment' => 'Discount percentage'])]
+    #[ORM\Column(name: 'discount', type: Types::SMALLINT, nullable: true, options: ['unsigned' => true, 'comment' => 'Discount percentage, 0..100'])]
     private ?int $discount = null;
 
-    #[ORM\Column(name: 'delivery', type: Types::FLOAT, nullable: true, options: ['comment' => 'Delivery cost'])]
-    private ?float $delivery = null;
+    #[ORM\Column(name: 'delivery', type: Types::DECIMAL, precision: 10, scale: 2, nullable: true, options: ['comment' => 'Delivery cost'])]
+    private ?string $delivery = null;
 
     #[ORM\Column(name: 'delivery_type', type: Types::SMALLINT, nullable: true, options: ['default' => 0, 'comment' => 'Delivery type: 0 - client address, 1 - warehouse address'])]
     private ?int $deliveryType = null;
@@ -151,13 +150,13 @@ class Order implements EntityInterface
     #[ORM\Column(name: 'tracking_number', type: Types::STRING, length: 50, nullable: true, options: ['comment' => 'Tracking number'])]
     private ?string $trackingNumber = null;
 
-    #[ORM\Column(name: 'manager_name', type: Types::STRING, length: 20, nullable: true, options: ['comment' => 'Name of the manager handling the order'])]
+    #[ORM\Column(name: 'manager_name', type: Types::STRING, length: 100, nullable: true, options: ['comment' => 'Name of the manager handling the order'])]
     private ?string $managerName = null;
 
-    #[ORM\Column(name: 'manager_email', type: Types::STRING, length: 30, nullable: true, options: ['comment' => 'Email of the manager handling the order'])]
+    #[ORM\Column(name: 'manager_email', type: Types::STRING, length: 255, nullable: true, options: ['comment' => 'Email of the manager handling the order'])]
     private ?string $managerEmail = null;
 
-    #[ORM\Column(name: 'manager_phone', type: Types::STRING, length: 20, nullable: true, options: ['comment' => 'Phone of the manager handling the order'])]
+    #[ORM\Column(name: 'manager_phone', type: Types::STRING, length: 50, nullable: true, options: ['comment' => 'Phone of the manager handling the order'])]
     private ?string $managerPhone = null;
 
     #[ORM\Column(name: 'carrier_name', type: Types::STRING, length: 50, nullable: true, options: ['comment' => 'Carrier company name'])]
@@ -169,8 +168,8 @@ class Order implements EntityInterface
     #[ORM\Column(name: 'locale', type: Types::STRING, length: 5, options: ['comment' => 'Locale the order was placed from'])]
     private string $locale;
 
-    #[ORM\Column(name: 'cur_rate', type: Types::FLOAT, nullable: true, options: ['default' => 1, 'comment' => 'Exchange rate at the time of payment'])]
-    private ?float $curRate = null;
+    #[ORM\Column(name: 'cur_rate', type: Types::DECIMAL, precision: 12, scale: 6, nullable: true, options: ['default' => '1.000000', 'comment' => 'Exchange rate at the time of payment'])]
+    private ?string $curRate = null;
 
     #[ORM\Column(name: 'currency', type: Types::ENUM, nullable: false, enumType: Currency::class, options: ['default' => Currency::EUR->value, 'comment' => 'Currency the order was placed in'])]
     private Currency $currency = Currency::EUR;
@@ -208,8 +207,8 @@ class Order implements EntityInterface
     #[ORM\Column(name: 'cancel_date', type: Types::DATETIME_IMMUTABLE, nullable: true, options: ['comment' => 'Final date for agreeing on delivery times'])]
     private ?DateTimeImmutable $cancelDate = null;
 
-    #[ORM\Column(name: 'weight_gross', type: Types::FLOAT, nullable: true, options: ['comment' => 'Total gross weight of the order'])]
-    private ?float $weightGross = null;
+    #[ORM\Column(name: 'weight_gross', type: Types::DECIMAL, precision: 12, scale: 3, nullable: true, options: ['comment' => 'Total gross weight of the order'])]
+    private ?string $weightGross = null;
 
     #[ORM\Column(name: 'product_review', type: Types::BOOLEAN, nullable: true, options: ['comment' => 'A review was left for the collections in the order'])]
     private ?bool $productReview = null;
@@ -235,8 +234,8 @@ class Order implements EntityInterface
     #[ORM\Column(name: 'show_msg', type: Types::BOOLEAN, nullable: true, options: ['comment' => 'Show special message'])]
     private ?bool $showMsg = null;
 
-    #[ORM\Column(name: 'delivery_price_euro', type: Types::FLOAT, nullable: true, options: ['comment' => 'Delivery cost in euros'])]
-    private ?float $deliveryPriceEuro = null;
+    #[ORM\Column(name: 'delivery_price_euro', type: Types::DECIMAL, precision: 10, scale: 2, nullable: true, options: ['comment' => 'Delivery cost in euros'])]
+    private ?string $deliveryPriceEuro = null;
 
     #[ORM\Column(name: 'address_payer', type: Types::INTEGER, nullable: true)]
     private ?int $addressPayer = null;
@@ -400,12 +399,12 @@ class Order implements EntityInterface
 
     public function getDelivery(): ?float
     {
-        return $this->delivery;
+        return $this->delivery === null ? null : (float) $this->delivery;
     }
 
-    public function setDelivery(?float $delivery): static
+    public function setDelivery(float|string|null $delivery): static
     {
-        $this->delivery = $delivery;
+        $this->delivery = $delivery === null ? null : (string) $delivery;
 
         return $this;
     }
@@ -820,12 +819,12 @@ class Order implements EntityInterface
 
     public function getCurRate(): ?float
     {
-        return $this->curRate;
+        return $this->curRate === null ? null : (float) $this->curRate;
     }
 
-    public function setCurRate(?float $curRate): static
+    public function setCurRate(float|string|null $curRate): static
     {
-        $this->curRate = $curRate;
+        $this->curRate = $curRate === null ? null : (string) $curRate;
 
         return $this;
     }
@@ -976,12 +975,12 @@ class Order implements EntityInterface
 
     public function getWeightGross(): ?float
     {
-        return $this->weightGross;
+        return $this->weightGross === null ? null : (float) $this->weightGross;
     }
 
-    public function setWeightGross(?float $weightGross): static
+    public function setWeightGross(float|string|null $weightGross): static
     {
-        $this->weightGross = $weightGross;
+        $this->weightGross = $weightGross === null ? null : (string) $weightGross;
 
         return $this;
     }
@@ -1084,12 +1083,12 @@ class Order implements EntityInterface
 
     public function getDeliveryPriceEuro(): ?float
     {
-        return $this->deliveryPriceEuro;
+        return $this->deliveryPriceEuro === null ? null : (float) $this->deliveryPriceEuro;
     }
 
-    public function setDeliveryPriceEuro(?float $deliveryPriceEuro): static
+    public function setDeliveryPriceEuro(float|string|null $deliveryPriceEuro): static
     {
-        $this->deliveryPriceEuro = $deliveryPriceEuro;
+        $this->deliveryPriceEuro = $deliveryPriceEuro === null ? null : (string) $deliveryPriceEuro;
 
         return $this;
     }

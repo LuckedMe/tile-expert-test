@@ -1,0 +1,14 @@
+@host=https://tile-expert-test.local
+@orderId=2
+
+### Order with its articles
+GET {{host}}/api/orders/{{orderId}}
+Accept: application/json
+
+### Not found -> 404
+GET {{host}}/api/orders/999999
+Accept: application/json
+
+### Not a positive integer -> no route (404)
+GET {{host}}/api/orders/abc
+Accept: application/json

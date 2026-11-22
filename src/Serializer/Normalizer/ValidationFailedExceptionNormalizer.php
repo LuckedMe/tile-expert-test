@@ -15,6 +15,7 @@ use Symfony\Component\Serializer\SerializerAwareTrait;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 use function count;
+use function preg_replace_callback;
 use function Symfony\Component\String\s;
 
 class ValidationFailedExceptionNormalizer implements NormalizerInterface, SerializerAwareInterface
@@ -42,7 +43,7 @@ class ValidationFailedExceptionNormalizer implements NormalizerInterface, Serial
                 continue;
             }
 
-            $errors[s($item->getPropertyPath())->snake()->toString()] = $item->getMessage();
+            $errors[$this->normalizePath($item->getPropertyPath())] = $item->getMessage();
         }
 
         $message = $data instanceof SymfonyValidationFailedException
@@ -72,5 +73,17 @@ class ValidationFailedExceptionNormalizer implements NormalizerInterface, Serial
             AppValidationFailedException::class     => true,
             SymfonyValidationFailedException::class => true,
         ];
+    }
+
+    /**
+     * "deliveryTimeMin" -> "delivery_time_min"; "articles[1].priceEur" -> "articles[1].price_eur".
+     */
+    private function normalizePath(string $path): string
+    {
+        return preg_replace_callback(
+            '/[A-Za-z_][A-Za-z0-9_]*/',
+            static fn (array $match): string => s($match[0])->snake()->toString(),
+            $path
+        ) ?? $path;
     }
 }

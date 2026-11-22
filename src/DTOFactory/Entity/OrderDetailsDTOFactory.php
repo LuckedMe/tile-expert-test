@@ -9,6 +9,11 @@ use App\Entity\Order;
 
 readonly class OrderDetailsDTOFactory
 {
+    public function __construct(
+        private OrderArticleInfoDTOFactory $articleFactory,
+    ) {
+    }
+
     public function fromEntity(Order $order): OrderDetailsDTO
     {
         return new OrderDetailsDTO(
@@ -26,6 +31,7 @@ readonly class OrderDetailsDTOFactory
             name: $order->getName(),
             createdAt: $order->getCreateDate(),
             updatedAt: $order->getUpdateDate(),
+            articles: $order->getArticles()->map($this->articleFactory->fromEntity(...))->getValues(),
         );
     }
 }

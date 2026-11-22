@@ -4,5 +4,6 @@ doctrine_migrations:
         # as migrations classes should NOT be autoloaded
         'DoctrineMigrations': '%kernel.project_dir%/migrations'
     organize_migrations: 'BY_YEAR'
-    all_or_nothing: true
+    # MySQL DDL statements commit implicitly, so a wrapping transaction breaks multi-migration runs (SAVEPOINT does not exist)
+    all_or_nothing: false
     enable_profiler: false

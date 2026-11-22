@@ -11,63 +11,68 @@ Tick a box (`- [x]`) when a step is done. Original task text (RU): [technical-sp
 ## 2. Endpoints
 
 - [ ] `GET /api/products?factory=&collection=&article=`
-  - [ ] fetch `https://tile.expert/it/tile/{factory}/{collection}/a/{article}` with Symfony HttpClient
-  - [ ] parse the EUR price from the page
-  - [ ] respond `{"price": 59.99, "factory": "...", "collection": "...", "article": "..."}`
-  - [ ] 404 when the page or price is not found; cache successful lookups (Symfony Cache)
-- [ ] `GET /api/orders` — paginated and grouped
-  - [ ] params: `page`, `per_page`, `group_by` (day | month | year), `start_day`, `end_day`, `sort`, `query`
-  - [ ] response: page, per page, total, pages + `data: [{group, count}]`
-- [ ] `POST /api/orders`
-  - [ ] `CreateOrderHandler` picks an entity factory by source (HTTP request, `CreateOrderRequest`)
-  - [ ] `UnprocessableEntityException` when no factory supports the source
-  - [ ] remove the duplicate `OrderCreateRequestEntityFactory`; make `OrderHttpRequestEntityFactory` return a real order
-  - [ ] dispatch `OrderCreatedEvent`
-- [ ] `GET /api/orders/{id}` — order details with articles; 404 when missing
+  - [x] fetch `https://tile.expert/it/tile/{factory}/{collection}/a/{article}` with Symfony HttpClient
+  - [ ] parse the EUR price from the page (parser written for JSON-LD / meta / microdata, **not verified against the live page**: tile.expert answers 403 with a Cloudflare challenge to server-side requests)
+  - [x] respond `{"price": 59.99, "factory": "...", "collection": "...", "article": "..."}`
+  - [x] 404 when the page or price is not found; cache successful lookups (Symfony Cache)
+- [x] `GET /api/orders` — paginated and grouped
+  - [x] params: `page`, `per_page`, `group_by` (day | month | year), `start_day`, `end_day`, `sort`, `query`
+  - [x] response: page, per page, total, pages + `data: [{group, count}]`
+- [x] `POST /api/orders`
+  - [x] `CreateOrderHandler` picks an entity factory by source (HTTP request, `CreateOrderRequest`)
+  - [x] `UnprocessableEntityException` when no factory supports the source
+  - [x] remove the duplicate `OrderCreateRequestEntityFactory`; make `OrderHttpRequestEntityFactory` return a real order
+  - [x] dispatch `OrderCreatedEvent`
+  - [x] `articles` array in the request body (`CreateOrderArticleRequest`, 1..200 items, validated per item)
+  - [x] save the `OrderArticle` rows with the order in one transaction (cascade persist); nothing is saved when an article is invalid
+  - [x] validation errors of the items use the item path (`articles[1].amount`); a value of a wrong type returns 400, not 500
+- [x] `GET /api/orders/{id}` — order details with articles; 404 when missing
 
 ## 3. Additional
 
-- [ ] Manticore search
-  - [ ] add the Manticore service to `docker-compose.yaml`
-  - [ ] `orders` index + indexing command
-  - [ ] `composer require manticoresoftware/manticoresearch-php`
-  - [ ] `query` param of `GET /api/orders` uses the Manticore `*` wildcard search; Manticore returns order ids, MySQL does filtering and grouping
-  - [ ] graceful fallback when Manticore is unavailable
-- [ ] OpenAPI (Swagger) description of all four endpoints
-- [ ] ports in `.env` / `docker-compose.yaml`, `makefile` targets
-- [ ] main `README.md` about the project
-  - [ ] purpose, stack (PHP 8.4, Symfony 8.1, Doctrine, Messenger, MySQL, Manticore, Nginx, Docker)
-  - [ ] quick start (`make docker-up`, migrations, env/ports)
-  - [ ] project structure (Controller → MessageBus → Handler → EntityFactory/Repository)
-  - [ ] how to run tests, links to `docs/`
-- [ ] describe all API endpoints in `README.md` (written once endpoints are final)
-  - [ ] `GET /api/products`
-  - [ ] `GET /api/orders`
-  - [ ] `POST /api/orders`
-  - [ ] `GET /api/orders/{id}`
-  - [ ] for each: params, request body example, success/error responses with status codes, curl example
-  - [ ] Swagger UI URL and `tests/_https/*.http` examples
+- [x] Manticore search
+  - [x] add the Manticore service to `docker-compose.yaml`
+  - [x] `orders` index (`app:order:reindex`) + new orders indexed on `OrderCreatedEvent`
+  - [x] client built on Symfony HttpClient (Manticore JSON API) instead of a third-party package, per `AGENTS.md`
+  - [x] `query` param of `GET /api/orders` uses the Manticore `*` wildcard search; Manticore returns order ids, MySQL does filtering and grouping
+  - [x] graceful fallback to MySQL `LIKE` when Manticore is unavailable
+- [x] OpenAPI (Swagger) description of all four endpoints (UI: `/api/doc`)
+- [x] ports in `.env` / `docker-compose.yaml`, `makefile` targets
+- [x] main `README.md` about the project
+  - [x] purpose, stack (PHP 8.4, Symfony 8.1, Doctrine, Messenger, MySQL, Manticore, Nginx, Docker)
+  - [x] quick start (`make docker-up`, migrations, env/ports)
+  - [x] project structure (Controller → MessageBus → Handler → EntityFactory/Repository)
+  - [x] how to run tests, links to `docs/`
+- [x] describe all API endpoints in `README.md` (written once endpoints are final)
+  - [x] `GET /api/products`
+  - [x] `GET /api/orders`
+  - [x] `POST /api/orders`
+  - [x] `GET /api/orders/{id}`
+  - [x] for each: params, request body example, success/error responses with status codes, curl example
+  - [x] Swagger UI URL and `tests/_https/*.http` examples
 
 ## 4. Tests (`php bin/phpunit`)
 
-- [ ] install `symfony/test-pack`, test database, fixtures
-- [ ] `WebTestCase`: `POST /api/orders` (success, 422 validation, 400 bad JSON)
-- [ ] `WebTestCase`: `GET /api/orders` (pagination, grouping, search)
-- [ ] `WebTestCase`: `GET /api/orders/{id}` (200 / 404)
-- [ ] `WebTestCase`: `GET /api/products` with `MockHttpClient`
-- [ ] `KernelTestCase`: `CreateOrderHandler` chooses the factory; throws `UnprocessableEntityException` when none supports the source
-- [ ] unit: product price parser
+- [x] install `symfony/test-pack`, test database, fixtures
+- [x] `WebTestCase`: `POST /api/orders` (success, 422 validation, 400 bad JSON)
+  - [x] articles: saved, returned by `GET /api/orders/{id}`, required / non-empty / not an array, per-article validation, all-or-nothing
+- [x] `WebTestCase`: `GET /api/orders` (pagination, grouping, search)
+- [x] `WebTestCase`: `GET /api/orders/{id}` (200 / 404)
+- [x] `WebTestCase`: `GET /api/products` with `MockHttpClient`
+- [x] `KernelTestCase`: `CreateOrderHandler` (with articles) chooses the factory; throws `UnprocessableEntityException` when none supports the source
+- [x] unit: product price parser
+- [x] ready-to-run HTTP requests in `tests/_https/orders` (`post.orders.http`, `post.orders.invalid.http`, `get.orders.collection.http`, `get.orders.search.http`, `get.orders.details.http`); responses checked against the running app
 
 ## 5. Database dump
 
-- [ ] save the original dump to `docs/dump.original.sql`
-- [ ] `docs/db-dump-analysis.md`: what is wrong in the dump (keys, types, nullability, naming, indexes, charset, duplicated data) and how to improve it
-- [ ] Doctrine migrations in the project style (`fix-migrations` skill)
-- [ ] `docs/dump.improved.sql`, verified by importing into a clean MySQL
+- [x] save the original dump to `docs/dump.original.sql`
+- [x] `docs/db-dump-analysis.md`: what is wrong in the dump (keys, types, nullability, naming, indexes, charset, duplicated data) and how to improve it
+- [x] Doctrine migration `Version20261123081500` in the project style (up + down tested, schema in sync with the entities)
+- [x] `docs/dump.improved.sql`, verified by importing into a clean MySQL
 
 ## 6. Final verification
 
-- [ ] `docker compose up -d --build`
-- [ ] `bin/console lint:container`
-- [ ] `php bin/phpunit`
-- [ ] manual calls via `tests/_https/*.http` and Swagger UI
+- [x] `docker compose up -d --build`
+- [x] `bin/console lint:container`
+- [x] `php bin/phpunit` (78 tests)
+- [x] manual calls (curl against http://localhost:8080) and Swagger UI (`/api/doc`)

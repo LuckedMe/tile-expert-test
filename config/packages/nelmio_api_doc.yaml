@@ -188,3 +188,13 @@ nelmio_api_doc:
             documentation:
                 info:
                     title: Tile Expert Test API
+                    version: '1.0.0'
+                    description: |
+                        REST API of the Tile Expert test task.
+
+                        * **Products** - price of a tile article taken from tile.expert.
+                        * **Orders** - create an order, get one order with its articles and a paginated
+                          collection of order counts grouped by day, month or year.
+                          The `query` filter of the collection uses the Manticore `*` wildcard search.
+
+                        Errors are returned as `{"code": 422, "message": "...", "errors": {...}}`.

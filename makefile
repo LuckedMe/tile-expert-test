@@ -1,5 +1,6 @@
 COMPOSE = docker compose
-PHP     = $(COMPOSE) exec -it php-fpm
+PHP     = $(COMPOSE) exec -T php-fpm
+PHP_TTY = $(COMPOSE) exec -it php-fpm
 MYSQL   = $(COMPOSE) exec -it mysql mysql
 
 .DEFAULT_GOAL := help
@@ -29,21 +30,28 @@ docker-logs: ## Follow logs from all containers
 ## --- Shells -----------------------------------------------------------------
 
 php-console: ## Open a shell in the php-fpm container
-	$(PHP) /bin/bash
+	$(PHP_TTY) /bin/bash
 
-mysql-console:
-	#docker compose -f ./.docker/docker-compose.yaml exec -it mysql mysql -u root -p"password"
+mysql-console: ## Open the MySQL client in the mysql container
 	$(MYSQL) -u root -p"password"
 
 ## --- Logs -----------------------------------------------------------------
 
-php-logs:
+php-logs: ## Follow php-fpm logs
 	$(COMPOSE) logs -f php-fpm
 
-mysql-logs:
+nginx-logs: ## Follow nginx logs
+	$(COMPOSE) logs -f nginx
+
+mysql-logs: ## Follow MySQL logs
 	$(COMPOSE) logs -f mysql
 
+manticore-logs: ## Follow Manticore logs
+	$(COMPOSE) logs -f manticore
+
 ## --- Backend (PHP/Symfony) --------------------------------------------------
+
+setup: docker-up install migrate migrate-test search-reindex ## First start: containers, dependencies, migrations (dev + test), search index
 
 install: ## Install PHP dependencies via Composer
 	$(PHP) composer install
@@ -51,73 +59,41 @@ install: ## Install PHP dependencies via Composer
 update: ## Update PHP dependencies via Composer
 	$(PHP) composer update
 
-migrate: ## Run Doctrine migrations (dev and test environments)
+migrate: ## Run Doctrine migrations
 	$(PHP) ./bin/console doctrine:migrations:migrate --no-interaction
+
+migrate-test: ## Create the test database and run the migrations on it
+	$(PHP) ./bin/console doctrine:database:create --env=test --if-not-exists
 	$(PHP) ./bin/console doctrine:migrations:migrate --env=test --no-interaction
 
 cache-clear: ## Clear the Symfony cache
-	$(PHP) ./bin/console cache:clear --no-warmup
-	$(PHP) ./bin/console cache:clear --env=test --no-interaction
+	$(PHP) ./bin/console cache:clear
 
+search-reindex: ## Rebuild the Manticore orders index from MySQL
+	$(PHP) ./bin/console app:order:reindex
+
+api-doc: ## Dump the OpenAPI specification (Swagger UI: /api/doc)
+	$(PHP) ./bin/console nelmio:apidoc:dump --format=json
 
 ## --- Test --------------------------------------------------
 
-test-api: ## Run only the API Codeception test suite
-	$(PHP) composer run test:api
+test: ## Run the PHPUnit test suite
+	$(PHP) php bin/phpunit
 
-test-coverage: ## Run all suites with HTML coverage
-	$(PHP) composer run test:coverage
-
-test-coverage-html: ## Run all suites except acceptance and web with HTML coverage (tests/_output/coverage)
-	$(PHP) composer run test:coverage-html
-
-lint:
+lint: ## Check the code style
 	$(PHP) composer run lint
 
-lint-fix:
+lint-fix: ## Fix the code style
 	$(PHP) composer run lint:fix
-
-## --- Production (VPS) -------------------------------------------------------
-
-PROD     = docker compose -f docker-compose.prod.yaml --env-file .env.prod.local
-PROD_PHP = $(PROD) exec -T php-fpm php bin/console
-
-prod-deploy: ## [prod] Run bin/deploy.sh (git pull, build, restart, checks) - on the VPS
-	./bin/deploy.sh
-
-prod-build: ## [prod] Build production images
-	$(PROD) build
-
-prod-up: ## [prod] Build and (re)start the production stack
-	$(PROD) up -d --build --remove-orphans
-
-prod-down: ## [prod] Stop the production stack
-	$(PROD) down
-
-prod-migrate: ## [prod] Run DB migrations and set up messenger transports
-	$(PROD_PHP) doctrine:migrations:migrate --no-interaction --allow-no-migration
-	$(PROD_PHP) messenger:setup-transports --no-interaction
-
-prod-logs: ## [prod] Follow production logs
-	$(PROD) logs -f --tail=200
-
-prod-ps: ## [prod] List production containers
-	$(PROD) ps
-
-prod-console: ## [prod] Open a shell in the production php-fpm container
-	$(PROD) exec php-fpm /bin/bash
 
 ## --- Help ---------------------------------------------------------------------
 
 help: ## Show this help message
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-16s\033[0m %s\n", $$1, $$2}'
 
-.PHONY: cache-clear \
+.PHONY: api-doc cache-clear \
 	docker-build docker-down docker-logs docker-ps docker-restart docker-stop docker-up \
-	help \
-	install \
-	migrate \
-	php-console \
-	prod-assets prod-build prod-console prod-deploy prod-down prod-jwt-keys prod-logs prod-migrate prod-ps prod-up \
-	test-api test-coverage-html test-coverage test test-unit test-web \
-	update
+	help install lint lint-fix \
+	manticore-logs migrate migrate-test mysql-console mysql-logs nginx-logs \
+	php-console php-logs \
+	search-reindex setup test update

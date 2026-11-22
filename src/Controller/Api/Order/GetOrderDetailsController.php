@@ -25,14 +25,16 @@ class GetOrderDetailsController extends AbstractController
         options: ['expose' => true],
         methods: ['GET']
     )]
+    #[OA\Get(
+        description: 'Returns one order together with its articles.',
+        summary: 'Get order details',
+    )]
+    #[OA\Parameter(name: 'id', description: 'Order id', in: 'path', required: true, schema: new OA\Schema(type: 'integer', minimum: 1), example: 1)]
     #[OA\Response(ref: '#/components/responses/error', response: Response::HTTP_UNPROCESSABLE_ENTITY)]
-    #[OA\Response(ref: '#/components/responses/invalid_json', response: Response::HTTP_BAD_REQUEST)]
-    #[OA\Response(ref: '#/components/responses/invalid_credentials', response: Response::HTTP_UNAUTHORIZED)]
-    #[OA\Response(ref: '#/components/responses/forbidden', response: Response::HTTP_FORBIDDEN)]
-    #[OA\Response(ref: '#/components/responses/not_found', response: Response::HTTP_NOT_FOUND)]
+    #[OA\Response(ref: '#/components/responses/not_found', response: Response::HTTP_NOT_FOUND, description: 'Order not found')]
     #[OA\Response(
         response: Response::HTTP_OK,
-        description: 'Return order details',
+        description: 'Order with articles',
         content: new OA\JsonContent(
             ref: new Model(
                 type: OrderDetailsDTO::class,

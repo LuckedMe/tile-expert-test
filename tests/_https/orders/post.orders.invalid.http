@@ -1,0 +1,129 @@
+@host=https://tile-expert-test.local
+
+### Empty body -> 422, every required field is listed
+POST {{host}}/api/orders
+Content-Type: application/json
+Accept: application/json
+
+{}
+
+### Broken JSON -> 400
+POST {{host}}/api/orders
+Content-Type: application/json
+Accept: application/json
+
+{"hash": "broken
+
+### Invalid e-mail and unknown enum values -> 422
+POST {{host}}/api/orders
+Content-Type: application/json
+Accept: application/json
+
+{
+    "hash": "12345678901234567890123456781111",
+    "token": "1234567890123456789012345678901212345678901234567890123456789000",
+    "email": "not-an-email",
+    "vat_type": "vat-type-9",
+    "payment_type": "cash",
+    "locale": "en_GB",
+    "currency": "GBP",
+    "measure": "km",
+    "name": "name",
+    "articles": [
+        {"article_id": 5, "amount": 1, "price": 1, "weight": 1, "packaging_count": 1, "pallet": 1, "packaging": 1}
+    ]
+}
+
+### Articles are required -> 422 (articles)
+POST {{host}}/api/orders
+Content-Type: application/json
+Accept: application/json
+
+{
+    "hash": "12345678901234567890123456782222",
+    "token": "1234567890123456789012345678901212345678901234567890123456789000",
+    "email": "test@example.com",
+    "vat_type": "vat-type-1",
+    "payment_type": "visa",
+    "locale": "en_GB",
+    "currency": "EUR",
+    "measure": "m",
+    "name": "name"
+}
+
+### Empty articles -> 422 (articles)
+POST {{host}}/api/orders
+Content-Type: application/json
+Accept: application/json
+
+{
+    "hash": "12345678901234567890123456783333",
+    "token": "1234567890123456789012345678901212345678901234567890123456789000",
+    "email": "test@example.com",
+    "vat_type": "vat-type-1",
+    "payment_type": "visa",
+    "locale": "en_GB",
+    "currency": "EUR",
+    "measure": "m",
+    "name": "name",
+    "articles": []
+}
+
+### articles is not an array -> 400
+POST {{host}}/api/orders
+Content-Type: application/json
+Accept: application/json
+
+{
+    "hash": "12345678901234567890123456784444",
+    "token": "1234567890123456789012345678901212345678901234567890123456789000",
+    "email": "test@example.com",
+    "vat_type": "vat-type-1",
+    "payment_type": "visa",
+    "locale": "en_GB",
+    "currency": "EUR",
+    "measure": "m",
+    "name": "name",
+    "articles": "five tiles"
+}
+
+### Invalid second article -> 422, errors point to articles[1].*, nothing is saved
+POST {{host}}/api/orders
+Content-Type: application/json
+Accept: application/json
+
+{
+    "hash": "12345678901234567890123456785555",
+    "token": "1234567890123456789012345678901212345678901234567890123456789000",
+    "email": "test@example.com",
+    "vat_type": "vat-type-1",
+    "payment_type": "visa",
+    "locale": "en_GB",
+    "currency": "EUR",
+    "measure": "m",
+    "name": "name",
+    "articles": [
+        {"article_id": 5, "amount": 12.5, "price": 30.2, "weight": 20, "packaging_count": 1, "pallet": 50, "packaging": 1.44},
+        {"article_id": 0, "amount": -1, "currency": "GBP", "multiple_pallet": 9, "delivery_time_min": "soon"}
+    ]
+}
+
+### Existing hash -> 422 (hash). Send the request from post.orders.http first.
+POST {{host}}/api/orders
+Content-Type: application/json
+Accept: application/json
+
+{
+    "hash": "12345678901234567890123456780000",
+    "token": "1234567890123456789012345678901212345678901234567890123456789000",
+    "email": "test@example.com",
+    "vat_type": "vat-type-1",
+    "payment_type": "visa",
+    "locale": "en_GB",
+    "currency": "EUR",
+    "measure": "m",
+    "name": "name",
+    "articles": [
+        {"article_id": 5, "amount": 1, "price": 1, "weight": 1, "packaging_count": 1, "pallet": 1, "packaging": 1}
+    ]
+}

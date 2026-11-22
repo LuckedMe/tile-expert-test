@@ -4,64 +4,68 @@ declare(strict_types=1);
 
 namespace App\DTO\Collection;
 
+use App\Contract\Dictionary\OrderGroupBy;
 use App\DTOFactory\Collection\OrderCriteriaDTOFactory;
+
+use function array_keys;
 
 /**
  * @see OrderCriteriaDTOFactory
  */
 final readonly class OrderCriteriaDTO
 {
-    //    public const string FILTER_TYPE      = 'type';
-    //    public const string FILTER_QUERY     = 'query';
-    //    public const string FILTER_SLUG      = 'slug';
-    //    public const string FILTER_ACTIVE    = 'active';
-    //    public const string FILTER_START_DAY = 'start_day';
-    //    public const string FILTER_END_DAY   = 'end_day';
-    //    public const string FILTER_INDEXED   = 'indexed';
-    //    public const string FILTER_FREQUENCY = 'frequency';
-    //    public const string FILTER_PRIORITY  = 'priority';
+    public const string FILTER_QUERY     = 'query';
+    public const string FILTER_GROUP_BY  = 'group_by';
+    public const string FILTER_START_DAY = 'start_day';
+    public const string FILTER_END_DAY   = 'end_day';
 
     public const array FILTERS = [
-        //        self::FILTER_TYPE      => true,
-        //        self::FILTER_QUERY     => true,
-        //        self::FILTER_SLUG      => true,
-        //        self::FILTER_ACTIVE    => true,
-        //        self::FILTER_START_DAY => true,
-        //        self::FILTER_END_DAY   => true,
-        //        self::FILTER_INDEXED   => true,
-        //        self::FILTER_FREQUENCY => true,
-        //        self::FILTER_PRIORITY  => true,
+        self::FILTER_QUERY     => true,
+        self::FILTER_GROUP_BY  => true,
+        self::FILTER_START_DAY => true,
+        self::FILTER_END_DAY   => true,
     ];
 
+    public const string SORT_GROUP = 'group';
+    public const string SORT_COUNT = 'count';
+
     public const array SORT_BY = [
-        // front-end => query builder field
-        //        'created_at' => 'p.createdAt',
-        //        'title'      => 'p.title',
-        //        'slug'       => 'p.slug',
-        //        'indexed'    => 'p.indexed',
-        //        'frequency'  => 'p.sitemapChangeFrequency',
-        //        'priority'   => 'p.sitemapPriority',
+        // front-end => sql alias
+        self::SORT_GROUP => 'grp',
+        self::SORT_COUNT => 'cnt',
     ];
 
     public function __construct(
-        //        public ?LocaleVO $locale = null,
-        //        public ?PageType $type = null,
-        //        public ?int $page = null,
-        //        public ?int $perPage = null,
-        //        public ?string $query = null,
-        //        public ?string $orderBy = null,
-        //        public ?string $orderDirection = null,
-        //
-        //        public ?string $slug = null,
-        //        public ?bool $active = null,
-        //        public ?CarbonImmutable $startDay = null,
-        //        public ?CarbonImmutable $endDay = null,
-        //        public ?bool $indexed = null,
-        //        public ?PageSitemapChangeFrequency $frequency = null,
-        //        public ?PageSitemapPriority $priority = null,
+        public OrderGroupBy $groupBy = OrderGroupBy::Day,
+        public int $page = 1,
+        public int $perPage = 10,
+        public ?string $query = null,
+        public ?string $startDay = null,
+        public ?string $endDay = null,
+        public string $orderBy = self::SORT_GROUP,
+        public string $orderDirection = 'desc',
+        /** @var int[]|null restricts the orders to these ids (result of the search), null - no restriction */
+        public ?array $orderIds = null,
     ) {
     }
 
+    /** @param int[]|null $orderIds */
+    public function withOrderIds(?array $orderIds): self
+    {
+        return new self(
+            $this->groupBy,
+            $this->page,
+            $this->perPage,
+            $this->query,
+            $this->startDay,
+            $this->endDay,
+            $this->orderBy,
+            $this->orderDirection,
+            $orderIds,
+        );
+    }
+
+    /** @return string[] */
     public function availableSortBy(): array
     {
         return array_keys(self::SORT_BY);
@@ -69,41 +73,29 @@ final readonly class OrderCriteriaDTO
 
     public function availableFilters(): array
     {
-        $availableFilters = self::FILTERS;
-        //        $availableFilters[self::FILTER_TYPE]      = PageType::valueNames();
-        //        $availableFilters[self::FILTER_FREQUENCY] = PageSitemapChangeFrequency::valueNames();
-        //        $availableFilters[self::FILTER_PRIORITY]  = PageSitemapPriority::valueNames();
-
-        return $availableFilters;
+        return [
+            ...self::FILTERS,
+            self::FILTER_GROUP_BY => OrderGroupBy::values(),
+        ];
     }
 
-    public function appliedFilters(?array $context = []): array
+    public function appliedFilters(): array
     {
-        return array_merge([
-            //            self::FILTER_TYPE      => $this->type?->value,
-            //            self::FILTER_QUERY     => $this->query,
-            //            self::FILTER_SLUG      => $this->slug,
-            //            self::FILTER_ACTIVE    => $this->active,
-            //            self::FILTER_START_DAY => $this->startDay?->format('Y-m-d'),
-            //            self::FILTER_END_DAY   => $this->endDay?->format('Y-m-d'),
-            //            self::FILTER_INDEXED   => $this->indexed,
-            //            self::FILTER_FREQUENCY => $this->frequency,
-            //            self::FILTER_PRIORITY  => $this->priority,
-        ], $context);
+        return [
+            self::FILTER_QUERY     => $this->query,
+            self::FILTER_GROUP_BY  => $this->groupBy->value,
+            self::FILTER_START_DAY => $this->startDay,
+            self::FILTER_END_DAY   => $this->endDay,
+        ];
     }
 
-    public function filtersSort(): ?string
+    public function sort(): string
     {
-        //        // resolve the key of self::SORT_BY
-        //        $key = array_keys(self::SORT_BY, $this->orderBy, true)[0] ?? null;
-        //
-        //        // key was not resolve, try to get the 1st key of self::SORT_BY
-        //        if ($key === null) {
-        //            $key = array_keys(self::SORT_BY)[0] ?? null;
-        //        }
-        //
-        //        return $key && $this->orderDirection
-        //            ? ($key . ' ' . $this->orderDirection)
-        //            : null;
+        return $this->orderBy . ' ' . $this->orderDirection;
+    }
+
+    public function sqlOrderBy(): string
+    {
+        return self::SORT_BY[$this->orderBy] ?? self::SORT_BY[self::SORT_GROUP];
     }
 }

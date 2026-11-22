@@ -10,6 +10,7 @@ use App\Contract\Dictionary\PaymentType;
 use App\Contract\Dictionary\VatType;
 use App\DTOFactory\Entity\OrderDetailsDTOFactory;
 use DateTimeImmutable;
+use Nelmio\ApiDocBundle\Attribute\Model;
 use OpenApi\Attributes as OA;
 use Symfony\Component\Serializer\Attribute\Groups;
 
@@ -62,6 +63,14 @@ readonly class OrderDetailsDTO
         #[Groups(['order_details'])]
         #[OA\Property(type: 'string', format: 'date-time')]
         public ?DateTimeImmutable $updatedAt,
+
+        /** @var OrderArticleInfoDTO[] */
+        #[Groups(['order_details'])]
+        #[OA\Property(
+            type: 'array',
+            items: new OA\Items(ref: new Model(type: OrderArticleInfoDTO::class, groups: ['order_details'])),
+        )]
+        public array $articles = [],
     ) {
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\ControllerRequest\Api\Order;
 
+use App\Contract\Dictionary\OrderGroupBy;
 use App\ControllerRequest\AbstractGetCollectionRequest;
 use OpenApi\Attributes as OA;
 use Symfony\Component\Serializer\Attribute\SerializedName;
@@ -15,7 +16,11 @@ final readonly class GetOrderCollectionRequest extends AbstractGetCollectionRequ
         ?int $page = self::DEFAULT_PAGE,
         ?int $perPage = self::DEFAULT_PER_PAGE,
         ?string $query = null,
-        ?string $sort = 'created_at desc',
+        ?string $sort = 'group desc',
+
+        #[Assert\Choice(callback: [OrderGroupBy::class, 'values'])]
+        #[SerializedName('group_by')]
+        public ?string $groupBy = 'day',
 
         #[Assert\Date]
         #[Assert\LessThanOrEqual(propertyPath: 'endDay')]

@@ -14,11 +14,15 @@ use App\ControllerRequestModifier\TrimModifier;
 use App\Entity\Order;
 use App\Validator\Constraint\EntityNotExists;
 use App\Validator\Constraint\EnumValues;
+use Nelmio\ApiDocBundle\Attribute\Model;
 use OpenApi\Attributes as OA;
 use Symfony\Component\Validator\Constraints as Assert;
 
 readonly class CreateOrderRequest implements ControllerRequestInterface
 {
+    /**
+     * @param CreateOrderArticleRequest[]|null $articles
+     */
     public function __construct(
         #[TrimModifier]
         #[StripTagsModifier]
@@ -44,6 +48,7 @@ readonly class CreateOrderRequest implements ControllerRequestInterface
 
         #[Assert\NotBlank]
         #[EnumValues(VatType::class)]
+        #[OA\Property(ref: new Model(type: VatType::class))]
         public ?string $vatType = null,
 
         #[TrimModifier]
@@ -56,6 +61,7 @@ readonly class CreateOrderRequest implements ControllerRequestInterface
 
         #[Assert\NotBlank]
         #[EnumValues(PaymentType::class)]
+        #[OA\Property(ref: new Model(type: PaymentType::class))]
         public ?string $paymentType = null,
 
         #[TrimModifier]
@@ -65,16 +71,28 @@ readonly class CreateOrderRequest implements ControllerRequestInterface
 
         #[Assert\NotBlank]
         #[EnumValues(Currency::class)]
+        #[OA\Property(ref: new Model(type: Currency::class))]
         public ?string $currency = null,
 
         #[Assert\NotBlank]
         #[EnumValues(Measure::class)]
+        #[OA\Property(ref: new Model(type: Measure::class))]
         public ?string $measure = null,
 
         #[TrimModifier]
         #[Assert\NotBlank]
         #[Assert\Length(max: 200)]
         public ?string $name = null,
+
+        #[Assert\NotBlank]
+        #[Assert\Count(min: 1, max: 200)]
+        #[Assert\Valid]
+        #[OA\Property(
+            description: 'Articles of the order (at least one)',
+            type: 'array',
+            items: new OA\Items(ref: new Model(type: CreateOrderArticleRequest::class)),
+        )]
+        public ?array $articles = null,
     ) {
     }
 }

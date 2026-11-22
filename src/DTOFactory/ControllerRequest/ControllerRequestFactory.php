@@ -16,6 +16,7 @@ use Symfony\Component\Serializer\Normalizer\AbstractObjectNormalizer;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
+use TypeError;
 
 use function Symfony\Component\String\u;
 
@@ -79,7 +80,7 @@ readonly class ControllerRequestFactory
                 JsonEncoder::FORMAT,
                 [AbstractObjectNormalizer::DISABLE_TYPE_ENFORCEMENT => true]
             );
-        } catch (NotNormalizableValueException) {
+        } catch (NotNormalizableValueException|TypeError) {
             throw new BadRequestException($this->translator->trans(id: 'GENERAL.BAD_REQUEST', domain: 'validators'));
         }
     }
