@@ -63,18 +63,58 @@ copy it to `docker-compose.override.yaml` (git-ignored) if you need them.
 
 ### Make targets
 
-`make help` lists everything. The most useful ones:
+Run `make` or `make help` to print the list. All targets run from the project root; the PHP ones execute inside the
+`php-fpm` container (`docker compose exec`), so the containers must be up.
+
+**Docker**
 
 | Target | Description |
 |---|---|
-| `make setup` | first start: containers, dependencies, migrations, search index |
-| `make docker-up` / `docker-down` | start / remove the containers |
-| `make migrate` | run Doctrine migrations |
-| `make search-reindex` | rebuild the Manticore index from MySQL |
-| `make test` | run the PHPUnit suite |
-| `make migrate-test` | create the test database and run the migrations on it |
-| `make api-doc` | dump the OpenAPI specification |
-| `make php-console` | shell in the php-fpm container |
+| `make docker-build` | build all Docker images (`docker compose build`) |
+| `make docker-up` | build the images if needed and start all containers in the background |
+| `make docker-stop` | stop the containers without removing them (data and volumes are kept) |
+| `make docker-down` | stop and remove the containers (named volumes such as the Manticore index are kept) |
+| `make docker-restart` | restart all containers |
+| `make docker-ps` | show the status and published ports of the containers |
+| `make docker-logs` | follow the logs of all containers |
+
+**Shells and logs**
+
+| Target | Description |
+|---|---|
+| `make php-console` | open an interactive bash shell in the `php-fpm` container (run `bin/console`, `composer`, ...) |
+| `make mysql-console` | open the MySQL client in the `mysql` container as `root` |
+| `make php-logs` | follow the `php-fpm` logs |
+| `make nginx-logs` | follow the `nginx` logs |
+| `make mysql-logs` | follow the `mysql` logs |
+| `make manticore-logs` | follow the `manticore` logs |
+
+**Backend (PHP / Symfony)**
+
+| Target | Description |
+|---|---|
+| `make setup` | first start in one command: `docker-up`, `install`, `migrate`, `migrate-test` and `search-reindex` |
+| `make install` | install the PHP dependencies (`composer install`) |
+| `make update` | update the PHP dependencies and `composer.lock` (`composer update`) |
+| `make migrate` | run the Doctrine migrations on the development database |
+| `make migrate-test` | create the test database `tile_expert_test_backend_test` (if missing) and run the migrations on it |
+| `make cache-clear` | clear the Symfony cache |
+| `make search-reindex` | drop and rebuild the Manticore `orders` index from MySQL (`app:order:reindex`) |
+| `make api-doc` | print the OpenAPI specification as JSON (the Swagger UI itself is at `/api/doc`) |
+
+**Tests and code style**
+
+| Target | Description |
+|---|---|
+| `make test` | run the PHPUnit suite (needs `make migrate-test` once and the MySQL and Manticore containers running) |
+| `make lint` | check the code style with PHP CS Fixer (`composer run lint`) without changing files |
+| `make lint-fix` | fix the code style (`composer run lint:fix`) |
+
+**Help**
+
+| Target | Description |
+|---|---|
+| `make help` | show the list of targets with their descriptions (the default target) |
 
 ## API
 
