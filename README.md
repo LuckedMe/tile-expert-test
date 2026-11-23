@@ -9,6 +9,8 @@ Test task for Tile Expert: a small JSON REST API (Symfony) that
 The task text is in [docs/technical-specifications-ru.md](docs/technical-specifications-ru.md),
 the checklist of the work done is in [docs/technical-specifications.md](docs/technical-specifications.md).
 
+**Live:** https://tile-expert-test.lucked.me/api/doc (Swagger UI, production VPS)
+
 ## Stack
 
 | Part | Technology |
@@ -361,7 +363,8 @@ curl http://localhost:8080/api/orders/1
 ## Deployment (production VPS)
 
 The development stack (`docker-compose.yaml`, code bind-mounted, dev passwords) is **not** used in production.
-Production is a separate stack built from the root `Dockerfile`:
+Production is a separate stack built from the root `Dockerfile`, deployed at
+<https://tile-expert-test.lucked.me/api/doc>:
 
 | File | Purpose |
 |---|---|

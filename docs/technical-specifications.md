@@ -80,7 +80,7 @@ Tick a box (`- [x]`) when a step is done. Original task text (RU): [technical-sp
 - [x] `bin/deploy.sh` with `--remote` (ssh to the server), `--ref`, `--no-pull`, `--no-backup`, `--no-prune`, `--reindex`
 - [x] `makefile` targets `prod-*`, README "Deployment" section
 - [x] checked locally with a throw-away production stack: image builds (both targets), migrations at start, `/api/doc`, POST/GET orders, search with and without Manticore, `bin/deploy.sh --reindex`
-- [ ] first deployment on the VPS (done by the owner: `docs/deploy.md`, sections 3-7)
+- [x] first deployment on the VPS (done by the owner: `docs/deploy.md`, sections 3-7)
 
 ## 7. Final verification
 
