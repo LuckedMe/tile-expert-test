@@ -1,15 +1,21 @@
 # Tile Expert test task
 
-[![PHP](https://img.shields.io/badge/PHP-8.4-777BB4?logo=php&logoColor=white)](https://www.php.net)
-[![Symfony](https://img.shields.io/badge/Symfony-8.1-000000?logo=symfony&logoColor=white)](https://symfony.com)
-[![Doctrine](https://img.shields.io/badge/Doctrine-ORM%203-FC6A31?logo=doctrine&logoColor=white)](https://www.doctrine-project.org)
-[![MySQL](https://img.shields.io/badge/MySQL-8-4479A1?logo=mysql&logoColor=white)](https://www.mysql.com)
-[![Manticore Search](https://img.shields.io/badge/Manticore-Search-00A5A8)](https://manticoresearch.com)
-[![Swagger](https://img.shields.io/badge/OpenAPI-Swagger%20UI-85EA2D?logo=swagger&logoColor=black)](https://tile-expert-test.lucked.me/api/doc)
-[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/compose/)
-[![nginx](https://img.shields.io/badge/nginx-009639?logo=nginx&logoColor=white)](https://nginx.org)
-[![PHPUnit](https://img.shields.io/badge/tested%20with-PHPUnit%2013-366488?logo=php&logoColor=white)](https://phpunit.de)
-[![Composer](https://img.shields.io/badge/Composer-dependencies-885630?logo=composer&logoColor=white)](https://getcomposer.org)
+**Backend**
+&nbsp;[![PHP 8.4](https://img.shields.io/badge/PHP-8.4-777BB4?style=flat-square&logo=php&logoColor=white)](https://www.php.net)
+[![Symfony 8.1](https://img.shields.io/badge/Symfony-8.1-000000?style=flat-square&logo=symfony&logoColor=white)](https://symfony.com)
+[![Doctrine ORM 3.8](https://img.shields.io/badge/Doctrine_ORM-3.8-FC6A31?style=flat-square&logo=doctrine&logoColor=white)](https://www.doctrine-project.org)
+[![OpenAPI / Swagger UI](https://img.shields.io/badge/OpenAPI-Swagger_UI-85EA2D?style=flat-square&logo=swagger&logoColor=black)](https://tile-expert-test.lucked.me/api/doc)
+
+**Infrastructure**
+&nbsp;[![MySQL 8.0](https://img.shields.io/badge/MySQL-8.0-4479A1?style=flat-square&logo=mysql&logoColor=white)](https://www.mysql.com)
+[![Manticore Search 32.1](https://img.shields.io/badge/Manticore_Search-32.1-00A5A8?style=flat-square)](https://manticoresearch.com)
+[![nginx](https://img.shields.io/badge/nginx-mainline-009639?style=flat-square&logo=nginx&logoColor=white)](https://nginx.org)
+[![Docker Compose](https://img.shields.io/badge/Docker-Compose-2496ED?style=flat-square&logo=docker&logoColor=white)](https://docs.docker.com/compose/)
+
+**Tooling**
+&nbsp;[![PHPUnit 13.4](https://img.shields.io/badge/PHPUnit-13.4-366488?style=flat-square&logo=php&logoColor=white)](https://phpunit.de)
+[![PHP CS Fixer 3.95](https://img.shields.io/badge/PHP_CS_Fixer-3.95-FF6F00?style=flat-square)](https://cs.symfony.com)
+[![Composer](https://img.shields.io/badge/Composer-2-885630?style=flat-square&logo=composer&logoColor=white)](https://getcomposer.org)
 
 A small JSON REST API built with Symfony. It:
 
@@ -21,6 +27,7 @@ A small JSON REST API built with Symfony. It:
 
 ## Contents
 
+- [Features](#features)
 - [Tech stack](#tech-stack)
 - [Getting started](#getting-started)
 - [Configuration](#configuration)
@@ -29,20 +36,33 @@ A small JSON REST API built with Symfony. It:
 - [Architecture](#architecture)
 - [Testing and code style](#testing-and-code-style)
 - [Deployment](#deployment)
+- [Troubleshooting](#troubleshooting)
 - [Documentation](#documentation)
 - [License](#license)
 
+## Features
+
+- Create an order with up to 200 articles in a single transaction; invalid data saves nothing.
+- Count orders grouped by day, month or year, with pagination, sorting and a date range.
+- Wildcard search over orders through Manticore, with a MySQL `LIKE` fallback when Manticore is down.
+- Read a tile price from a tile.expert product page (cached).
+- Uniform JSON error format and a Swagger UI generated from the code.
+- Separate production stack behind Traefik and a Cloudflare Tunnel, deployed with one script.
+
 ## Tech stack
 
-| Part | Technology |
-|---|---|
-| Language / framework | PHP 8.4, Symfony 8.1 |
-| Database | MySQL 8, Doctrine ORM and Migrations |
-| Search | Manticore Search (JSON API through Symfony HttpClient) |
-| Messaging | Symfony Messenger (command, query and event buses) |
-| API docs | NelmioApiDocBundle (Swagger UI) |
-| Tests / style | PHPUnit 13, PHP CS Fixer |
-| Runtime | Docker Compose: nginx, php-fpm, mysql, manticore, adminer |
+| Layer | Technology | Version | Purpose |
+|---|---|---|---|
+| Language | PHP | 8.4 | runtime (`php-fpm`) |
+| Framework | Symfony | 8.1 | HTTP, validation, serialization, Messenger, HttpClient |
+| ORM | Doctrine ORM and Migrations | 3.8 / 4.0 | orders and articles, schema migrations |
+| Database | MySQL | 8.0 | primary storage |
+| Search | Manticore Search | 32.1.3 | wildcard order search (JSON API through HttpClient) |
+| API docs | NelmioApiDocBundle | 5.14 | OpenAPI and Swagger UI |
+| Web server | nginx | mainline | reverse proxy to php-fpm |
+| Runtime | Docker Compose | - | nginx, php-fpm, mysql, manticore, adminer (dev only) |
+| Tests | PHPUnit | 13.4 | unit and functional tests |
+| Code style | PHP CS Fixer | 3.95 | Symfony ruleset |
 
 ## Getting started
 
@@ -415,6 +435,19 @@ bin/deploy.sh --remote --ref <tag|commit>    # deploy a revision or roll back
 Options: `--ref`, `--no-pull`, `--no-prune`, `--no-backup`, `--reindex`, `--remote`, `--host`, `--dir`, `--help`.
 Make shortcuts: `prod-deploy`, `prod-deploy-remote`, `prod-build`, `prod-up`, `prod-down`, `prod-ps`, `prod-logs`,
 `prod-console`, `prod-reindex`.
+
+## Troubleshooting
+
+| Symptom | Cause / fix |
+|---|---|
+| `make setup` fails on a busy port | change `NGINX_PORT`, `ADMINER_PORT`, `MYSQL_PORT` or `MANTICORE_PORT` in `.env.local` |
+| Search returns nothing | the index is empty: `make search-reindex` (without Manticore the API falls back to `LIKE`) |
+| Functional tests fail with a database error | the test database is missing: `make migrate-test` |
+| `POST /api/orders` is `422` with `hash ... already exist` | `hash` must be unique; send another one |
+| `GET /api/products` is `400` | tile.expert answered with a Cloudflare challenge (`403`); a known limitation, see [GET /api/products](#get-apiproducts) |
+
+Production problems (Traefik `404`/`502`, build killed, deploy script errors) are listed in
+[docs/deploy.md](docs/deploy.md#11-troubleshooting).
 
 ## Documentation
 
