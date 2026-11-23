@@ -26,7 +26,7 @@ ADD --chmod=0755 https://github.com/mlocati/docker-php-extension-installer/relea
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates git unzip \
-    && install-php-extensions @composer zip opcache intl pdo_mysql bcmath \
+    && install-php-extensions @composer zip opcache intl pdo_mysql bcmath gd exif xsl \
     && rm -rf /var/lib/apt/lists/*
 
 RUN groupadd app -g ${GROUP_ID} \
