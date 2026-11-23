@@ -1,5 +1,16 @@
 # Tile Expert test task
 
+[![PHP](https://img.shields.io/badge/PHP-8.4-777BB4?logo=php&logoColor=white)](https://www.php.net)
+[![Symfony](https://img.shields.io/badge/Symfony-8.1-000000?logo=symfony&logoColor=white)](https://symfony.com)
+[![Doctrine](https://img.shields.io/badge/Doctrine-ORM%203-FC6A31?logo=doctrine&logoColor=white)](https://www.doctrine-project.org)
+[![MySQL](https://img.shields.io/badge/MySQL-8-4479A1?logo=mysql&logoColor=white)](https://www.mysql.com)
+[![Manticore Search](https://img.shields.io/badge/Manticore-Search-00A5A8)](https://manticoresearch.com)
+[![Swagger](https://img.shields.io/badge/OpenAPI-Swagger%20UI-85EA2D?logo=swagger&logoColor=black)](https://tile-expert-test.lucked.me/api/doc)
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/compose/)
+[![nginx](https://img.shields.io/badge/nginx-009639?logo=nginx&logoColor=white)](https://nginx.org)
+[![PHPUnit](https://img.shields.io/badge/tested%20with-PHPUnit%2013-366488?logo=php&logoColor=white)](https://phpunit.de)
+[![Composer](https://img.shields.io/badge/Composer-dependencies-885630?logo=composer&logoColor=white)](https://getcomposer.org)
+
 A small JSON REST API built with Symfony. It:
 
 - reads a tile price from a [tile.expert](https://tile.expert) product page;
