@@ -3,8 +3,8 @@ set -e
 
 # only prepare the app for php-fpm / bin/console, not for e.g. `docker run ... sh`
 if [ "$1" = 'php-fpm' ] || [ "$1" = 'php' ] || [ "$1" = 'bin/console' ]; then
-    # the container is built at start, not at image build: config/packages/locale_requirement.php
-    # reads LOCALES / DEFAULT_LOCALE from the real environment of this container
+    # the cache is warmed at start, not at image build: the compiled container embeds the real
+    # environment of this container (APP_SECRET, DATABASE_URL, ...)
     rm -rf var/cache/prod
     php bin/console cache:warmup --no-interaction
 

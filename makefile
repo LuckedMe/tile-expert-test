@@ -86,14 +86,47 @@ lint: ## Check the code style
 lint-fix: ## Fix the code style
 	$(PHP) composer run lint:fix
 
+## --- Production (VPS), see docs/deploy.md ------------------------------------
+
+PROD     = docker compose -f docker-compose.prod.yaml --env-file .env.prod.local
+PROD_PHP = $(PROD) exec -T php-fpm php bin/console
+
+prod-deploy: ## [prod] Run bin/deploy.sh: pull, backup, build, restart, checks - on the VPS
+	bin/deploy.sh
+
+prod-deploy-remote: ## [prod] Deploy from this machine: bin/deploy.sh --remote (push first)
+	bin/deploy.sh --remote
+
+prod-build: ## [prod] Build the production images
+	$(PROD) build
+
+prod-up: ## [prod] Build and (re)start the production stack
+	$(PROD) up -d --build --remove-orphans
+
+prod-down: ## [prod] Stop and remove the production containers (volumes are kept)
+	$(PROD) down
+
+prod-ps: ## [prod] List the production containers
+	$(PROD) ps
+
+prod-logs: ## [prod] Follow the production logs
+	$(PROD) logs -f --tail=200
+
+prod-console: ## [prod] Open a shell in the production php-fpm container
+	$(PROD) exec php-fpm /bin/bash
+
+prod-reindex: ## [prod] Rebuild the Manticore index in the production stack
+	$(PROD_PHP) app:order:reindex
+
 ## --- Help ---------------------------------------------------------------------
 
 help: ## Show this help message
-	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-16s\033[0m %s\n", $$1, $$2}'
+	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
 .PHONY: api-doc cache-clear \
 	docker-build docker-down docker-logs docker-ps docker-restart docker-stop docker-up \
 	help install lint lint-fix \
 	manticore-logs migrate migrate-test mysql-console mysql-logs nginx-logs \
 	php-console php-logs \
+	prod-build prod-console prod-deploy prod-deploy-remote prod-down prod-logs prod-ps prod-reindex prod-up \
 	search-reindex setup test update

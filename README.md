@@ -110,6 +110,20 @@ Run `make` or `make help` to print the list. All targets run from the project ro
 | `make lint` | check the code style with PHP CS Fixer (`composer run lint`) without changing files |
 | `make lint-fix` | fix the code style (`composer run lint:fix`) |
 
+**Production (VPS)** — see [docs/deploy.md](docs/deploy.md); they use `docker-compose.prod.yaml` and `.env.prod.local`
+
+| Target | Description |
+|---|---|
+| `make prod-deploy` | run `bin/deploy.sh` on the server: git pull, database backup, build, restart, checks |
+| `make prod-deploy-remote` | deploy from this machine: `bin/deploy.sh --remote` runs the deploy on the server over ssh (push your commits first) |
+| `make prod-build` | build the production images (`app` and `nginx` targets of the root `Dockerfile`) |
+| `make prod-up` | build and (re)start the production stack in the background |
+| `make prod-down` | stop and remove the production containers (the `mysql` and `manticore` volumes are kept) |
+| `make prod-ps` | show the status of the production containers |
+| `make prod-logs` | follow the production logs |
+| `make prod-console` | open a bash shell in the production `php-fpm` container |
+| `make prod-reindex` | rebuild the Manticore index in the production stack (`app:order:reindex`) |
+
 **Help**
 
 | Target | Description |
@@ -344,6 +358,39 @@ curl http://localhost:8080/api/orders/1
 | 200 | order found |
 | 404 | `{"code": 404, "message": "Order Not Found"}` |
 
+## Deployment (production VPS)
+
+The development stack (`docker-compose.yaml`, code bind-mounted, dev passwords) is **not** used in production.
+Production is a separate stack built from the root `Dockerfile`:
+
+| File | Purpose |
+|---|---|
+| `Dockerfile` | multi-stage production image: `php-base` → `vendor` → `app` (php-fpm, code baked in, no dev packages, non-root) and the `nginx` target |
+| `docker-compose.prod.yaml` | `php-fpm`, `nginx`, `mysql`, `manticore`; **no published ports**, nginx joins the `reverse-proxy` network with Traefik labels |
+| `.env.prod.local.dist` | template of the server-only `.env.prod.local` (secrets, domain; placeholders only) |
+| `.dockerignore` | keeps secrets, `vendor`, `var`, tests and docs out of the image |
+| `bin/deploy.sh` | the deploy script: run it on the server, or from your machine with `--remote` |
+| `.claude/skills/main-dockerfile-fix/` | Claude skill (+ `scripts/check.sh`) that creates, checks and fixes the files above |
+
+On the VPS the stack runs behind the shared Traefik and a Cloudflare Tunnel at `https://tile-expert-test.lucked.me`.
+
+```bash
+# on the server, in /home/dad/workspace/www/tile-expert-test (first start: docs/deploy.md, sections 3-6)
+bin/deploy.sh                      # pull, backup, build, restart, health checks
+bin/deploy.sh --reindex            # ...and rebuild the Manticore search index
+
+# from your machine, after `git push`
+bin/deploy.sh --remote             # runs the same script on the server over ssh (DEPLOY_HOST, DEPLOY_DIR)
+bin/deploy.sh --remote --ref <tag|commit>   # deploy a revision / roll back
+```
+
+Options: `--ref`, `--no-pull`, `--no-prune`, `--no-backup`, `--reindex`, `--remote`, `--host`, `--dir`, `--help`.
+
+* **[docs/deploy.md](docs/deploy.md)** — the full guide: Cloudflare hostname, deploy key and clone, `.env.prod.local`, first start,
+  verification, updates and rollback with `bin/deploy.sh`, backups, troubleshooting;
+* **[docs/main-dockerfile-fix.md](docs/main-dockerfile-fix.md)** — how the production `Dockerfile` and compose file are built and kept in sync
+  (used by the `main-dockerfile-fix` skill; run `bash .claude/skills/main-dockerfile-fix/scripts/check.sh` to audit them).
+
 ## Project structure
 
 ```
@@ -358,8 +405,11 @@ src/
   DTO/, DTOFactory/                response DTOs and their factories
   Command/                         console commands (app:order:reindex)
 migrations/                        Doctrine migrations
-docs/                              task, checklist plan and database notes
+docs/                              task, checklist plan, database notes, deployment guides
 tests/_https/                      ready-to-run HTTP requests
+bin/deploy.sh                      production deploy script (--remote deploys from your machine)
+Dockerfile, docker-compose.prod.yaml, .env.prod.local.dist   production image and stack
+.claude/skills/                    Claude skills (fix-migrations, main-dockerfile-fix)
 ```
 
 Request flow: `Controller -> MessageBusHandler -> Handler -> Repository / Service -> DTO -> JSON`.
@@ -389,4 +439,6 @@ every test starts from empty tables. The tile.expert HTTP client is replaced by 
 * [docs/technical-specifications.md](docs/technical-specifications.md) — checklist plan of the work (progress);
 * [docs/technical-specifications-ru.md](docs/technical-specifications-ru.md) — original task;
 * [docs/db-dump-analysis.md](docs/db-dump-analysis.md) — what is wrong in the provided database dump and how it was improved;
-* [docs/dump.original.sql](docs/dump.original.sql) / [docs/dump.improved.sql](docs/dump.improved.sql) — the provided and the improved schema.
+* [docs/dump.original.sql](docs/dump.original.sql) / [docs/dump.improved.sql](docs/dump.improved.sql) — the provided and the improved schema;
+* [docs/deploy.md](docs/deploy.md) — deploying to the production VPS (`bin/deploy.sh`, `--remote`);
+* [docs/main-dockerfile-fix.md](docs/main-dockerfile-fix.md) — the production `Dockerfile`: layout, checklist, verification.

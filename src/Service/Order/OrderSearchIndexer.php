@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Service\Order;
 
 use App\Entity\Order;
+use App\Exception\CommunicationException;
 use App\Repository\OrderRepository;
 use App\Service\Manticore\ManticoreClient;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -47,9 +48,20 @@ final readonly class OrderSearchIndexer
         $this->client->sql(sprintf('DROP TABLE IF EXISTS %s', $this->table));
     }
 
+    /**
+     * @throws CommunicationException when Manticore is unavailable
+     */
     public function indexOrder(Order $order): void
     {
-        $this->client->bulkReplace($this->table, [$this->toDocument($order)]);
+        $documents = [$this->toDocument($order)];
+
+        try {
+            $this->client->bulkReplace($this->table, $documents);
+        } catch (CommunicationException) {
+            // the index does not exist yet (first start, new volume): create it and try once more
+            $this->createTable();
+            $this->client->bulkReplace($this->table, $documents);
+        }
     }
 
     public function indexById(int $orderId): void

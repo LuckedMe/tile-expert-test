@@ -1,0 +1,105 @@
+# Production stack built from the root Dockerfile (the VPS: Traefik + Cloudflare Tunnel, docs/deploy.md).
+#
+#   cp .env.prod.local.dist .env.prod.local   # then fill in the secrets
+#   docker compose -f docker-compose.prod.yaml --env-file .env.prod.local up -d --build
+#
+# Using -f skips docker-compose.yaml / docker-compose.override.yaml (the dev stack).
+# --env-file feeds the ${...} values below; env_file passes the same file to the app.
+#
+# Nothing is published on the host: Traefik reaches nginx through the external "reverse-proxy"
+# network (labels below). Published Docker ports would bypass ufw.
+
+name: tile-expert-test-prod
+
+services:
+    php-fpm:
+        image: ${APP_IMAGE:-tile-expert-test}:${APP_TAG:-latest}
+        build:
+            context: .
+            target: app
+        restart: unless-stopped
+        env_file:
+            - .env.prod.local
+        environment:
+            APP_ENV: prod
+            APP_DEBUG: 0
+            DATABASE_URL: mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE}?serverVersion=8.0.32&charset=utf8mb4
+            MANTICORE_URL: http://manticore:9308
+            MESSENGER_TRANSPORT_DSN: sync://
+            RUN_MIGRATIONS: ${RUN_MIGRATIONS:-1}
+        networks:
+            - app
+        depends_on:
+            mysql:
+                condition: service_healthy
+            manticore:
+                condition: service_started
+
+    nginx:
+        image: ${APP_IMAGE:-tile-expert-test}-nginx:${APP_TAG:-latest}
+        build:
+            context: .
+            target: nginx
+        restart: unless-stopped
+        networks:
+            - app
+            - reverse-proxy
+        labels:
+            - traefik.enable=true
+            - traefik.docker.network=reverse-proxy
+            - traefik.http.services.tile-expert-test.loadbalancer.server.port=80
+            # no redirectscheme middleware and no certresolver: Cloudflare terminates TLS and redirects to https
+            - traefik.http.routers.tile-expert-test.rule=Host(`${APP_DOMAIN}`)
+            - traefik.http.routers.tile-expert-test.entrypoints=web
+        depends_on:
+            - php-fpm
+
+    mysql:
+        build: ./.docker/mysql
+        restart: unless-stopped
+        environment:
+            MYSQL_DATABASE: ${MYSQL_DATABASE}
+            MYSQL_USER: ${MYSQL_USER}
+            MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+            MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+        volumes:
+            - mysql:/var/lib/mysql
+        # hide the dev init.sql (test database + grants for 'user'@'%') baked into the image
+        tmpfs:
+            - /docker-entrypoint-initdb.d
+        networks:
+            - app
+        healthcheck:
+            test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+            interval: 5s
+            timeout: 5s
+            retries: 30
+            start_period: 30s
+
+    # search index of the orders; rebuilt from MySQL with `bin/console app:order:reindex`
+    manticore:
+        image: manticoresearch/manticore:${MANTICORE_VERSION:-32.1.3}
+        restart: unless-stopped
+        volumes:
+            - manticore:/var/lib/manticore
+        networks:
+            - app
+        ulimits:
+            nproc: 65535
+            nofile:
+                soft: 65535
+                hard: 65535
+            memlock:
+                soft: -1
+                hard: -1
+
+volumes:
+    mysql:
+    manticore:
+
+networks:
+    app:
+        driver: bridge
+    reverse-proxy:
+        name: reverse-proxy
+        external: true

@@ -70,7 +70,19 @@ Tick a box (`- [x]`) when a step is done. Original task text (RU): [technical-sp
 - [x] Doctrine migration `Version20261123081500` in the project style (up + down tested, schema in sync with the entities)
 - [x] `docs/dump.improved.sql`, verified by importing into a clean MySQL
 
-## 6. Final verification
+## 6. Production deployment (VPS)
+
+- [x] root `Dockerfile` (stages `php-base`, `vendor`, `app`, `nginx`), `.dockerignore`, `docker-compose.prod.yaml` (no published ports, Traefik labels), `.env.prod.local.dist`
+  - [x] `symfony/twig-bundle` moved to `require` (the prod image installs without dev packages and Swagger UI needs it)
+  - [x] the search index is created on the first order; a Manticore outage no longer fails `POST /api/orders` (index errors are logged, the order is kept)
+- [x] Claude skill `main-dockerfile-fix` (`.claude/skills/main-dockerfile-fix/SKILL.md`, `scripts/check.sh`) and its instructions `docs/main-dockerfile-fix.md`
+- [x] `docs/deploy.md`: Cloudflare hostname, deploy key, secrets, first start, verification, updates, rollback, backups, troubleshooting
+- [x] `bin/deploy.sh` with `--remote` (ssh to the server), `--ref`, `--no-pull`, `--no-backup`, `--no-prune`, `--reindex`
+- [x] `makefile` targets `prod-*`, README "Deployment" section
+- [x] checked locally with a throw-away production stack: image builds (both targets), migrations at start, `/api/doc`, POST/GET orders, search with and without Manticore, `bin/deploy.sh --reindex`
+- [ ] first deployment on the VPS (done by the owner: `docs/deploy.md`, sections 3-7)
+
+## 7. Final verification
 
 - [x] `docker compose up -d --build`
 - [x] `bin/console lint:container`
