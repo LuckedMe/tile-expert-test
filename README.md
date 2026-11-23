@@ -1,34 +1,56 @@
-# tile-expert-test
+# Tile Expert test task
 
-Test task for Tile Expert: a small JSON REST API (Symfony) that
+A small JSON REST API built with Symfony. It:
 
-* reads a tile price from a [tile.expert](https://tile.expert) product page,
-* creates orders and returns one order with its articles,
-* returns the number of orders grouped by day / month / year (paginated) with a Manticore `*` wildcard search.
+- reads a tile price from a [tile.expert](https://tile.expert) product page;
+- creates orders together with their articles, and returns an order by id;
+- counts orders grouped by day, month or year (paginated), with Manticore `*` wildcard search.
 
-The task text is in [docs/technical-specifications-ru.md](docs/technical-specifications-ru.md),
-the checklist of the work done is in [docs/technical-specifications.md](docs/technical-specifications.md).
+**Live demo:** <https://tile-expert-test.lucked.me/api/doc> (Swagger UI on the production VPS)
 
-**Live:** https://tile-expert-test.lucked.me/api/doc (Swagger UI, production VPS)
+## Contents
 
-## Stack
+- [Tech stack](#tech-stack)
+- [Getting started](#getting-started)
+- [Configuration](#configuration)
+- [Usage](#usage)
+- [API reference](#api-reference)
+- [Architecture](#architecture)
+- [Testing and code style](#testing-and-code-style)
+- [Deployment](#deployment)
+- [Documentation](#documentation)
+- [License](#license)
+
+## Tech stack
 
 | Part | Technology |
 |---|---|
 | Language / framework | PHP 8.4, Symfony 8.1 |
-| Database | MySQL 8, Doctrine ORM + Migrations |
+| Database | MySQL 8, Doctrine ORM and Migrations |
 | Search | Manticore Search (JSON API through Symfony HttpClient) |
-| Async / CQRS | Symfony Messenger (command, query and event buses) |
+| Messaging | Symfony Messenger (command, query and event buses) |
 | API docs | NelmioApiDocBundle (Swagger UI) |
+| Tests / style | PHPUnit 13, PHP CS Fixer |
 | Runtime | Docker Compose: nginx, php-fpm, mysql, manticore, adminer |
 
-## Quick start
+## Getting started
+
+### Prerequisites
+
+- Docker with the Compose plugin
+- GNU Make
+- Free ports `8080`, `8081`, `3306` and `9308` (or [change them](#configuration))
+
+### Install and run
 
 ```bash
-make setup                    # containers + composer install + migrations + search index
+git clone git@github.com:LuckedMe/tile-expert-test.git
+cd tile-expert-test
+make setup
 ```
 
-`make setup` is the same as:
+`make setup` starts the containers, runs `composer install`, applies the migrations to the development and test
+databases, and builds the search index. To do it by hand:
 
 ```bash
 docker compose up --build -d
@@ -37,110 +59,77 @@ docker compose exec php-fpm bin/console doctrine:migrations:migrate --no-interac
 docker compose exec php-fpm bin/console app:order:reindex
 ```
 
-Then open:
+### Verify
+
+```bash
+curl -i "http://localhost:8080/api/orders?group_by=month"   # 200 with {"items": [], "meta": {...}} on an empty database
+```
 
 | What | URL |
 |---|---|
-| API | http://localhost:8080/api/... |
-| Swagger UI | http://localhost:8080/api/doc |
-| Adminer (DB) | http://localhost:8081 (server `mysql`, user `user`, password `password`, db `tile_expert_test_backend`) |
-| Manticore HTTP | http://localhost:9308 |
+| API | <http://localhost:8080/api> |
+| Swagger UI | <http://localhost:8080/api/doc> |
+| Adminer (database UI) | <http://localhost:8081> (server `mysql`, user `user`, password `password`, database `tile_expert_test_backend`) |
+| Manticore HTTP | <http://localhost:9308> |
 
-### Ports and settings
+The credentials above are for the local development stack only.
 
-Published ports are environment variables (see `.env`, override them in `.env.local` or the shell):
+## Configuration
 
-| Variable | Default | Service |
+`.env` is committed and holds defaults only. Override values in `.env.local` (git-ignored) or in the shell.
+Real secrets never go into committed files.
+
+| Variable | Default | Purpose |
 |---|---|---|
-| `NGINX_PORT` | `8080` | application |
-| `MYSQL_PORT` | `3306` | MySQL |
-| `MANTICORE_PORT` | `9308` | Manticore HTTP API |
-| `ADMINER_PORT` | `8081` | Adminer |
+| `NGINX_PORT` | `8080` | published port of the application |
+| `ADMINER_PORT` | `8081` | published port of Adminer |
+| `MYSQL_PORT` | `3306` | published port of MySQL |
+| `MANTICORE_PORT` | `9308` | published port of the Manticore HTTP API |
+| `DATABASE_URL` | see `.env` | Doctrine connection |
+| `MANTICORE_URL` | see `.env` | Manticore HTTP endpoint |
+| `MANTICORE_ORDERS_TABLE` | `orders` | name of the search index table |
+| `PRODUCT_PAGE_URL_TEMPLATE` | see `.env` | tile.expert product page URL template |
+| `PRODUCT_PRICE_CACHE_TTL` | see `.env` | how long a found price is cached, in seconds |
 
-Settings can be overridden in `.env.local` (git-ignored). Other variables: `DATABASE_URL`, `MANTICORE_URL`, `MANTICORE_ORDERS_TABLE`,
-`PRODUCT_PAGE_URL_TEMPLATE`, `PRODUCT_PRICE_CACHE_TTL` (seconds).
+For local-only additions (for example an nginx reverse proxy) copy `docker-compose.override.yaml.dist` to
+`docker-compose.override.yaml` (git-ignored).
 
-`docker-compose.override.yaml.dist` shows local-only additions (e.g. an nginx reverse proxy);
-copy it to `docker-compose.override.yaml` (git-ignored) if you need them.
+## Usage
 
-### Make targets
+Run `make` or `make help` to list every target. All targets run from the project root. The PHP ones execute inside
+the `php-fpm` container, so the containers must be up.
 
-Run `make` or `make help` to print the list. All targets run from the project root; the PHP ones execute inside the
-`php-fpm` container (`docker compose exec`), so the containers must be up.
-
-**Docker**
-
-| Target | Description |
+| Task | Command |
 |---|---|
-| `make docker-build` | build all Docker images (`docker compose build`) |
-| `make docker-up` | build the images if needed and start all containers in the background |
-| `make docker-stop` | stop the containers without removing them (data and volumes are kept) |
-| `make docker-down` | stop and remove the containers (named volumes such as the Manticore index are kept) |
-| `make docker-restart` | restart all containers |
-| `make docker-ps` | show the status and published ports of the containers |
-| `make docker-logs` | follow the logs of all containers |
+| First start | `make setup` |
+| Start / stop / remove containers | `make docker-up` / `make docker-stop` / `make docker-down` |
+| Container status and logs | `make docker-ps`, `make docker-logs` (also `php-logs`, `nginx-logs`, `mysql-logs`, `manticore-logs`) |
+| Shell in PHP / MySQL container | `make php-console` / `make mysql-console` |
+| Install / update dependencies | `make install` / `make update` |
+| Run migrations (dev / test database) | `make migrate` / `make migrate-test` |
+| Rebuild the search index | `make search-reindex` |
+| Clear the Symfony cache | `make cache-clear` |
+| Print the OpenAPI specification | `make api-doc` |
+| Run tests | `make test` |
+| Check / fix code style | `make lint` / `make lint-fix` |
+| Production (VPS) | `make prod-*`, see [Deployment](#deployment) |
 
-**Shells and logs**
+## API reference
 
-| Target | Description |
+Base URL: `http://localhost:8080`. All responses are JSON. The full, interactive description is in Swagger UI
+(`/api/doc`). Ready-to-run requests (PhpStorm / VS Code REST Client) are in [`tests/_https/orders`](tests/_https/orders);
+the host is set in the `@host` variable at the top of each file.
+
+| Method and path | Purpose |
 |---|---|
-| `make php-console` | open an interactive bash shell in the `php-fpm` container (run `bin/console`, `composer`, ...) |
-| `make mysql-console` | open the MySQL client in the `mysql` container as `root` |
-| `make php-logs` | follow the `php-fpm` logs |
-| `make nginx-logs` | follow the `nginx` logs |
-| `make mysql-logs` | follow the `mysql` logs |
-| `make manticore-logs` | follow the `manticore` logs |
+| `GET /api/products` | [price of a tile](#get-apiproducts) |
+| `GET /api/orders` | [order counts grouped by period](#get-apiorders) |
+| `POST /api/orders` | [create an order with articles](#post-apiorders) |
+| `GET /api/orders/{id}` | [one order with its articles](#get-apiordersid) |
 
-**Backend (PHP / Symfony)**
+### Errors
 
-| Target | Description |
-|---|---|
-| `make setup` | first start in one command: `docker-up`, `install`, `migrate`, `migrate-test` and `search-reindex` |
-| `make install` | install the PHP dependencies (`composer install`) |
-| `make update` | update the PHP dependencies and `composer.lock` (`composer update`) |
-| `make migrate` | run the Doctrine migrations on the development database |
-| `make migrate-test` | create the test database `tile_expert_test_backend_test` (if missing) and run the migrations on it |
-| `make cache-clear` | clear the Symfony cache |
-| `make search-reindex` | drop and rebuild the Manticore `orders` index from MySQL (`app:order:reindex`) |
-| `make api-doc` | print the OpenAPI specification as JSON (the Swagger UI itself is at `/api/doc`) |
-
-**Tests and code style**
-
-| Target | Description |
-|---|---|
-| `make test` | run the PHPUnit suite (needs `make migrate-test` once and the MySQL and Manticore containers running) |
-| `make lint` | check the code style with PHP CS Fixer (`composer run lint`) without changing files |
-| `make lint-fix` | fix the code style (`composer run lint:fix`) |
-
-**Production (VPS)** — see [docs/deploy.md](docs/deploy.md); they use `docker-compose.prod.yaml` and `.env.prod.local`
-
-| Target | Description |
-|---|---|
-| `make prod-deploy` | run `bin/deploy.sh` on the server: git pull, database backup, build, restart, checks |
-| `make prod-deploy-remote` | deploy from this machine: `bin/deploy.sh --remote` runs the deploy on the server over ssh (push your commits first) |
-| `make prod-build` | build the production images (`app` and `nginx` targets of the root `Dockerfile`) |
-| `make prod-up` | build and (re)start the production stack in the background |
-| `make prod-down` | stop and remove the production containers (the `mysql` and `manticore` volumes are kept) |
-| `make prod-ps` | show the status of the production containers |
-| `make prod-logs` | follow the production logs |
-| `make prod-console` | open a bash shell in the production `php-fpm` container |
-| `make prod-reindex` | rebuild the Manticore index in the production stack (`app:order:reindex`) |
-
-**Help**
-
-| Target | Description |
-|---|---|
-| `make help` | show the list of targets with their descriptions (the default target) |
-
-## API
-
-Base URL: `http://localhost:8080`. All responses are JSON. The same description is available
-interactively in Swagger UI (`/api/doc`); ready-to-run requests (PhpStorm / VS Code REST Client `.http` files) are in
-[tests/_https/orders](tests/_https/orders): `post.orders.http` (create), `post.orders.invalid.http` (validation errors),
-`get.orders.collection.http` (grouping, pagination, filters), `get.orders.search.http` (Manticore search),
-`get.orders.details.http` / `get.orders.http` (one order). The host is set in the `@host` variable at the top of each file.
-
-Errors have one format:
+Every error has the same shape:
 
 ```json
 {"code": 422, "message": "Validation Failed", "errors": {"fields": {"email": "This value is not a valid email address."}}}
@@ -148,16 +137,14 @@ Errors have one format:
 
 | Status | Meaning |
 |---|---|
-| 400 | invalid JSON / bad request, or the upstream site failed (products) |
+| 400 | invalid JSON or a value of the wrong type; upstream site failure (products) |
 | 404 | entity not found |
-| 422 | validation failed |
+| 422 | validation failed; failed fields are listed in `errors.fields` |
 
-### 1. Get a product price
+### GET /api/products
 
-`GET /api/products?factory={factory}&collection={collection}&article={article}`
-
-Reads the EUR price from `https://tile.expert/it/tile/{factory}/{collection}/a/{article}`.
-Successful lookups are cached for `PRODUCT_PRICE_CACHE_TTL` seconds.
+Reads the EUR price from `https://tile.expert/it/tile/{factory}/{collection}/a/{article}`. Successful lookups are
+cached for `PRODUCT_PRICE_CACHE_TTL` seconds.
 
 | Query parameter | Required | Description |
 |---|---|---|
@@ -180,29 +167,27 @@ curl "http://localhost:8080/api/products?factory=marca-corona&collection=arteset
 | 404 | product page or price not found |
 | 422 | a parameter is missing or is not a valid slug |
 
-> tile.expert protects its pages with a Cloudflare challenge, so server-side requests can be answered with `403`
-> (reported as `400`). The price parser (JSON-LD, Open Graph, microdata) has not been verified against the live page.
+> **Known limitation:** tile.expert protects its pages with a Cloudflare challenge, so server-side requests can get
+> a `403` (reported as `400`). The price parser (JSON-LD, Open Graph, microdata) has not been verified against the live page.
 
-### 2. Get orders grouped by period (paginated)
-
-`GET /api/orders`
+### GET /api/orders
 
 Returns the number of orders per day, month or year (by `create_date`), paginated by groups.
 
 | Query parameter | Default | Description |
 |---|---|---|
 | `group_by` | `day` | `day`, `month` or `year` |
-| `page` | `1` | page number (>= 1) |
-| `per_page` | `10` | groups per page (1..1000) |
-| `start_day` | – | `yyyy-mm-dd`, orders created on or after this day |
-| `end_day` | – | `yyyy-mm-dd`, orders created on or before this day |
+| `page` | `1` | page number, >= 1 |
+| `per_page` | `10` | groups per page, 1..1000 |
+| `start_day` | none | `yyyy-mm-dd`, orders created on or after this day |
+| `end_day` | none | `yyyy-mm-dd`, orders created on or before this day |
 | `sort` | `group desc` | `group asc\|desc` or `count asc\|desc` |
-| `query` | – | Manticore wildcard search (see below) |
+| `query` | none | Manticore wildcard search, see below |
 
-**Search (`query`).** Searches the order hash, email, name, number, client name and surname, company name and
-description in Manticore. `foo` matches `*foo*`; your own `*` wildcards are kept (`foo*`, `*@example.com`);
-several words must all match; `*` or an empty value means no filter. If Manticore is unavailable the search falls back
-to MySQL `LIKE`. At most 10 000 matching orders are taken into account.
+**Search.** `query` searches the order hash, email, name, number, client name and surname, company name and
+description. `foo` matches `*foo*`; your own `*` wildcards are kept (`foo*`, `*@example.com`); several words must
+all match; `*` or an empty value means no filter. If Manticore is unavailable, the search falls back to MySQL `LIKE`.
+At most 10 000 matching orders are taken into account.
 
 ```bash
 curl "http://localhost:8080/api/orders?group_by=month&per_page=12&query=example*"
@@ -224,18 +209,17 @@ curl "http://localhost:8080/api/orders?group_by=month&per_page=12&query=example*
 }
 ```
 
-`group` is `Y-m-d`, `Y-m` or `Y` depending on `group_by`; `total` is the number of groups, `pages` the number of pages.
+`group` is `Y-m-d`, `Y-m` or `Y` depending on `group_by`. `total` is the number of groups and `pages` the number of pages.
 
 | Status | When |
 |---|---|
 | 200 | ok |
-| 422 | invalid parameter (e.g. `group_by=week`, `page=0`) |
+| 422 | invalid parameter, e.g. `group_by=week` or `page=0` |
 
-### 3. Create an order
+### POST /api/orders
 
-`POST /api/orders` — `Content-Type: application/json`
-
-Creates the order **together with its articles** in one transaction: if the order or any article is invalid nothing is saved.
+`Content-Type: application/json`. Creates the order **together with its articles** in one transaction: if the order
+or any article is invalid, nothing is saved.
 
 | Field | Required | Rules |
 |---|---|---|
@@ -250,9 +234,9 @@ Creates the order **together with its articles** in one transaction: if the orde
 | `currency` | yes | `EUR`, `USD` |
 | `measure` | yes | `m`, `mm`, `sm`, `kg` |
 | `name` | yes | max 200 |
-| `articles` | yes | array of articles, 1..200 items (see below) |
+| `articles` | yes | array of 1..200 articles |
 
-Each item of `articles`:
+Each article:
 
 | Field | Required | Rules |
 |---|---|---|
@@ -265,7 +249,7 @@ Each item of `articles`:
 | `delivery_time_min` | no | `yyyy-mm-dd` |
 | `delivery_time_max` | no | `yyyy-mm-dd`, not earlier than `delivery_time_min` |
 | `weight` | yes | number >= 0, package weight |
-| `multiple_pallet` | no | `1` - multiple of a package, `2` - of a pallet, `3` - not less than a pallet |
+| `multiple_pallet` | no | `1` multiple of a package, `2` of a pallet, `3` not less than a pallet |
 | `packaging_count` | yes | number > 0, the quantity the product can be added in |
 | `pallet` | yes | number >= 0, quantity per pallet |
 | `packaging` | yes | number > 0, quantity per package |
@@ -277,8 +261,6 @@ curl -X POST http://localhost:8080/api/orders -H 'Content-Type: application/json
   "token": "1234567890123456789012345678901212345678901234567890123456789000",
   "email": "test@example.com",
   "vat_type": "vat-type-1",
-  "vat_number": "0123456789",
-  "tax_number": "9876543210",
   "payment_type": "visa",
   "locale": "en_GB",
   "currency": "EUR",
@@ -289,17 +271,10 @@ curl -X POST http://localhost:8080/api/orders -H 'Content-Type: application/json
       "article_id": 5,
       "amount": 12.5,
       "price": 30.2,
-      "price_eur": 30.2,
-      "currency": "EUR",
-      "measure": "m",
-      "delivery_time_min": "2026-12-01",
-      "delivery_time_max": "2026-12-15",
       "weight": 20,
-      "multiple_pallet": 1,
       "packaging_count": 1,
       "pallet": 50,
-      "packaging": 1.44,
-      "swimming_pool": false
+      "packaging": 1.44
     }
   ]
 }'
@@ -307,22 +282,13 @@ curl -X POST http://localhost:8080/api/orders -H 'Content-Type: application/json
 
 | Status | When |
 |---|---|
-| 204 | order and its articles created (no body); the order is added to the search index |
-| 400 | invalid JSON, or a value of a wrong type (e.g. `articles` is a string) |
-| 422 | validation failed; every failed field is listed in `errors.fields`, article errors use the path of the item, e.g. `articles[1].amount` |
+| 204 | order and articles created (no body); the order is added to the search index |
+| 400 | invalid JSON, or a value of the wrong type (e.g. `articles` is a string) |
+| 422 | validation failed; article errors use the item path, e.g. `articles[1].amount` |
 
-```json
-{"code": 422, "message": "Validation Failed", "errors": {"fields": {"articles[1].amount": "This value should be positive."}}}
-```
+### GET /api/orders/{id}
 
-Internally the controller dispatches `CreateOrderCommand`; `CreateOrderHandler` picks an entity factory that
-supports the data source (`CreateOrderRequest`, an HTTP request or an array), saves the order (the articles are saved by
-the cascade of the `Order::$articles` association) and dispatches `OrderCreatedEvent`. When no factory supports the source
-it throws `UnprocessableEntityException`.
-
-### 4. Get an order
-
-`GET /api/orders/{id}` — `id` is a positive integer.
+`id` is a positive integer.
 
 ```bash
 curl http://localhost:8080/api/orders/1
@@ -360,88 +326,94 @@ curl http://localhost:8080/api/orders/1
 | 200 | order found |
 | 404 | `{"code": 404, "message": "Order Not Found"}` |
 
-## Deployment (production VPS)
-
-The development stack (`docker-compose.yaml`, code bind-mounted, dev passwords) is **not** used in production.
-Production is a separate stack built from the root `Dockerfile`, deployed at
-<https://tile-expert-test.lucked.me/api/doc>:
-
-| File | Purpose |
-|---|---|
-| `Dockerfile` | multi-stage production image: `php-base` → `vendor` → `app` (php-fpm, code baked in, no dev packages, non-root) and the `nginx` target |
-| `docker-compose.prod.yaml` | `php-fpm`, `nginx`, `mysql`, `manticore`; **no published ports**, nginx joins the `reverse-proxy` network with Traefik labels |
-| `.env.prod.local.dist` | template of the server-only `.env.prod.local` (secrets, domain; placeholders only) |
-| `.dockerignore` | keeps secrets, `vendor`, `var`, tests and docs out of the image |
-| `bin/deploy.sh` | the deploy script: run it on the server, or from your machine with `--remote` |
-| `.claude/skills/main-dockerfile-fix/` | Claude skill (+ `scripts/check.sh`) that creates, checks and fixes the files above |
-
-On the VPS the stack runs behind the shared Traefik and a Cloudflare Tunnel at `https://tile-expert-test.lucked.me`.
-
-```bash
-# on the server, in /home/dad/workspace/www/tile-expert-test (first start: docs/deploy.md, sections 3-6)
-bin/deploy.sh                      # pull, backup, build, restart, health checks
-bin/deploy.sh --reindex            # ...and rebuild the Manticore search index
-
-# from your machine, after `git push`
-bin/deploy.sh --remote             # runs the same script on the server over ssh (DEPLOY_HOST, DEPLOY_DIR)
-bin/deploy.sh --remote --ref <tag|commit>   # deploy a revision / roll back
-```
-
-Options: `--ref`, `--no-pull`, `--no-prune`, `--no-backup`, `--reindex`, `--remote`, `--host`, `--dir`, `--help`.
-
-* **[docs/deploy.md](docs/deploy.md)** — the full guide: Cloudflare hostname, deploy key and clone, `.env.prod.local`, first start,
-  verification, updates and rollback with `bin/deploy.sh`, backups, troubleshooting;
-* **[docs/main-dockerfile-fix.md](docs/main-dockerfile-fix.md)** — how the production `Dockerfile` and compose file are built and kept in sync
-  (used by the `main-dockerfile-fix` skill; run `bash .claude/skills/main-dockerfile-fix/scripts/check.sh` to audit them).
-
-## Project structure
-
-```
-src/
-  Controller/Api/{Order,Product}   thin controllers: request -> message bus -> JSON
-  ControllerRequest/               request DTOs (validated, bound by ControllerRequestResolver)
-  Message/{Command,Query,Event}    messages
-  MessageHandler/                  handlers (one per message)
-  EntityFactory/Order              entity factories, picked by the data source (tag app.order.entity_factory)
-  Service/{Manticore,Order,Product} Manticore client, search + indexer, product price provider/parser
-  Repository/                      Doctrine repositories (grouped order counts use DBAL)
-  DTO/, DTOFactory/                response DTOs and their factories
-  Command/                         console commands (app:order:reindex)
-migrations/                        Doctrine migrations
-docs/                              task, checklist plan, database notes, deployment guides
-tests/_https/                      ready-to-run HTTP requests
-bin/deploy.sh                      production deploy script (--remote deploys from your machine)
-Dockerfile, docker-compose.prod.yaml, .env.prod.local.dist   production image and stack
-.claude/skills/                    Claude skills (fix-migrations, main-dockerfile-fix)
-```
+## Architecture
 
 Request flow: `Controller -> MessageBusHandler -> Handler -> Repository / Service -> DTO -> JSON`.
 
-## Tests
+Controllers are thin: they bind and validate the request into a DTO, dispatch a command or query on the Messenger
+bus, and return the resulting DTO as JSON. For `POST /api/orders`, `CreateOrderHandler` picks an entity factory that
+supports the data source (`CreateOrderRequest`, an HTTP request or an array), saves the order (articles are saved by
+the cascade of `Order::$articles`) and dispatches `OrderCreatedEvent`, which updates the search index.
 
-```bash
-make migrate-test   # once: creates tile_expert_test_backend_test and runs the migrations (also part of make setup)
-make test           # php bin/phpunit inside the php-fpm container
+```
+src/
+  Controller/Api/{Order,Product}    thin controllers
+  ControllerRequest/                request DTOs, bound and validated by ControllerRequestResolver
+  Message/{Command,Query,Event}     messages
+  MessageHandler/                   one handler per message
+  EntityFactory/Order               entity factories, tagged app.order.entity_factory
+  Service/{Manticore,Order,Product} Manticore client, search and indexer, product price provider and parser
+  Repository/                       Doctrine repositories (grouped counts use DBAL)
+  DTO/, DTOFactory/                 response DTOs and their factories
+  Command/                          console commands (app:order:reindex)
+migrations/                         Doctrine migrations
+tests/                              Unit, Functional and ready-to-run HTTP requests (_https)
+docs/                               task, plan, database notes, deployment guides
+bin/deploy.sh                       production deploy script
 ```
 
-The functional tests need the compose services (MySQL and Manticore) to be running. They use the separate
-`tile_expert_test_backend_test` database and the `orders_test` Manticore table, so the development data is untouched;
-every test starts from empty tables. The tile.expert HTTP client is replaced by `MockHttpClient`, no real requests are made.
+## Testing and code style
 
-| Suite | What it covers |
+```bash
+make migrate-test   # once: creates tile_expert_test_backend_test and runs the migrations (part of make setup)
+make test           # php bin/phpunit inside the php-fpm container
+make lint           # PHP CS Fixer, check only
+make lint-fix       # PHP CS Fixer, fix
+```
+
+Functional tests need the MySQL and Manticore containers running. They use the separate
+`tile_expert_test_backend_test` database and the `orders_test` Manticore table, so development data is untouched, and
+every test starts from empty tables. The tile.expert HTTP client is replaced by `MockHttpClient`, so no real
+requests are made.
+
+| Suite | Covers |
 |---|---|
-| `tests/Functional/Api/Order/CreateOrderTest` | `POST /api/orders`: success, articles saved (and returned by `GET /api/orders/{id}`), articles required / non-empty / array, per-article validation, nothing saved when an article is invalid, new order is searchable, 422 validation, unknown enum, duplicate hash, 400 bad JSON |
-| `tests/Functional/Api/Order/GetOrderCollectionTest` | `GET /api/orders`: grouping by day/month/year, pagination, sort, date filter, Manticore wildcard search, validation |
-| `tests/Functional/Api/Order/GetOrderDetailsTest` | `GET /api/orders/{id}`: order with / without articles, 404 |
-| `tests/Functional/Api/Product/GetProductTest` | `GET /api/products`: price from JSON-LD / meta, upstream URL, 404, upstream failure, validation |
-| `tests/Functional/MessageHandler/CreateOrderHandlerTest` | `CreateOrderHandler`: factory per source (request DTO, array, HTTP request) incl. articles, `UnprocessableEntityException` without a factory |
-| `tests/Unit/...` | price parser, price provider (cache), search query builder / client, `MessageBusHandler` |
+| `tests/Functional/Api/Order/CreateOrderTest` | `POST /api/orders`: success, articles, validation, atomicity, search indexing, duplicate hash, bad JSON |
+| `tests/Functional/Api/Order/GetOrderCollectionTest` | `GET /api/orders`: grouping, pagination, sort, date filter, wildcard search, validation |
+| `tests/Functional/Api/Order/GetOrderDetailsTest` | `GET /api/orders/{id}`: with and without articles, 404 |
+| `tests/Functional/Api/Product/GetProductTest` | `GET /api/products`: price parsing, upstream URL, 404, upstream failure, validation |
+| `tests/Functional/MessageHandler/CreateOrderHandlerTest` | `CreateOrderHandler`: factory per data source, no-factory error |
+| `tests/Unit/...` | price parser and provider (cache), search query builder and client, `MessageBusHandler` |
+
+Code style is the Symfony standard enforced by PHP CS Fixer (`.php-cs-fixer.dist.php`).
+
+## Deployment
+
+The development stack (`docker-compose.yaml`: bind-mounted code, dev passwords) is **not** used in production.
+Production is a separate stack built from the root `Dockerfile` and run behind a shared Traefik and a Cloudflare
+Tunnel at <https://tile-expert-test.lucked.me>.
+
+| File | Purpose |
+|---|---|
+| `Dockerfile` | multi-stage image: `php-base`, `vendor`, `app` (php-fpm, code baked in, no dev packages, non-root) and `nginx` |
+| `docker-compose.prod.yaml` | `php-fpm`, `nginx`, `mysql`, `manticore`; no published ports, nginx joins the `reverse-proxy` network with Traefik labels |
+| `.env.prod.local.dist` | template of the server-only `.env.prod.local` (placeholders only) |
+| `.dockerignore` | keeps secrets, `vendor`, `var`, tests and docs out of the image |
+| `bin/deploy.sh` | deploy script, run on the server or from your machine with `--remote` |
+
+```bash
+# on the server (first start: docs/deploy.md)
+bin/deploy.sh                                # pull, backup, build, restart, health checks
+bin/deploy.sh --reindex                      # ...and rebuild the search index
+
+# from your machine, after `git push`
+bin/deploy.sh --remote                       # same script over ssh (DEPLOY_HOST, DEPLOY_DIR)
+bin/deploy.sh --remote --ref <tag|commit>    # deploy a revision or roll back
+```
+
+Options: `--ref`, `--no-pull`, `--no-prune`, `--no-backup`, `--reindex`, `--remote`, `--host`, `--dir`, `--help`.
+Make shortcuts: `prod-deploy`, `prod-deploy-remote`, `prod-build`, `prod-up`, `prod-down`, `prod-ps`, `prod-logs`,
+`prod-console`, `prod-reindex`.
 
 ## Documentation
 
-* [docs/technical-specifications.md](docs/technical-specifications.md) — checklist plan of the work (progress);
-* [docs/technical-specifications-ru.md](docs/technical-specifications-ru.md) — original task;
-* [docs/db-dump-analysis.md](docs/db-dump-analysis.md) — what is wrong in the provided database dump and how it was improved;
-* [docs/dump.original.sql](docs/dump.original.sql) / [docs/dump.improved.sql](docs/dump.improved.sql) — the provided and the improved schema;
-* [docs/deploy.md](docs/deploy.md) — deploying to the production VPS (`bin/deploy.sh`, `--remote`);
-* [docs/main-dockerfile-fix.md](docs/main-dockerfile-fix.md) — the production `Dockerfile`: layout, checklist, verification.
+- [docs/technical-specifications-ru.md](docs/technical-specifications-ru.md): the original task
+- [docs/technical-specifications.md](docs/technical-specifications.md): checklist of the work done
+- [docs/db-dump-analysis.md](docs/db-dump-analysis.md): problems in the provided database dump and how they were fixed
+- [docs/dump.original.sql](docs/dump.original.sql), [docs/dump.improved.sql](docs/dump.improved.sql): provided and improved schema
+- [docs/deploy.md](docs/deploy.md): full production guide (Cloudflare, deploy key, first start, updates, rollback, backups, troubleshooting)
+- [docs/main-dockerfile-fix.md](docs/main-dockerfile-fix.md): how the production `Dockerfile` and compose file are built and kept in sync
+
+## License
+
+Proprietary (see `composer.json`). This is a test task and is not licensed for reuse.
