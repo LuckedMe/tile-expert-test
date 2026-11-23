@@ -75,7 +75,7 @@ Tick a box (`- [x]`) when a step is done. Original task text (RU): [technical-sp
 - [x] root `Dockerfile` (stages `php-base`, `vendor`, `app`, `nginx`), `.dockerignore`, `docker-compose.prod.yaml` (no published ports, Traefik labels), `.env.prod.local.dist`
   - [x] `symfony/twig-bundle` moved to `require` (the prod image installs without dev packages and Swagger UI needs it)
   - [x] the search index is created on the first order; a Manticore outage no longer fails `POST /api/orders` (index errors are logged, the order is kept)
-- [x] Claude skill `main-dockerfile-fix` (`.claude/skills/main-dockerfile-fix/SKILL.md`, `scripts/check.sh`) and its instructions `docs/main-dockerfile-fix.md`
+- [x] global Claude skill `fix-dockerfile` (`~/.claude/skills/fix-dockerfile/`, replaces the former project skill `main-dockerfile-fix`) and the project instructions `docs/main-dockerfile-fix.md`
 - [x] `docs/deploy.md`: Cloudflare hostname, deploy key, secrets, first start, verification, updates, rollback, backups, troubleshooting
 - [x] `bin/deploy.sh` with `--remote` (ssh to the server), `--ref`, `--no-pull`, `--no-backup`, `--no-prune`, `--reindex`
 - [x] `makefile` targets `prod-*`, README "Deployment" section

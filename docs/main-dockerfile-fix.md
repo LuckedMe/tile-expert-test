@@ -1,6 +1,6 @@
 # Main (production) Dockerfile: instructions
 
-How to make and keep the root `Dockerfile` of `tile-expert-test` ready for the VPS. Used by the Claude skill `main-dockerfile-fix` (`.claude/skills/main-dockerfile-fix/SKILL.md`, with the checker `scripts/check.sh`), and readable on its own.
+How to make and keep the root `Dockerfile` of `tile-expert-test` ready for the VPS. Used by the global Claude skill `fix-dockerfile` (`~/.claude/skills/fix-dockerfile/`, with the checker `scripts/check.sh`; it is shared by all projects, so the project facts live here), and readable on its own.
 
 The server-side steps (Cloudflare, deploy key, secrets, first start, updates, backups) are **not** repeated here: see [deploy.md](deploy.md). The common server setup (Docker, Traefik, Cloudflare Tunnel) is described in the `vps-setup` repository (`docs/vps-setup.md`, step 23 for this project).
 
@@ -89,7 +89,7 @@ Locally, from the project root (Docker with BuildKit):
 
 ```bash
 # 0. the checker and the Dockerfile linter
-bash .claude/skills/main-dockerfile-fix/scripts/check.sh      # exit 0
+bash ~/.claude/skills/fix-dockerfile/scripts/check.sh      # exit 0
 docker build --check .
 
 # 1. both targets build
